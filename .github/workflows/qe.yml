@@ -251,6 +251,13 @@ jobs:
       - name: 'Check Cypress version'
         run: yarn cypress info
         working-directory: ./cy-runner
+      - name: 'Cache binaries'
+        uses: actions/cache@v3
+        with:
+          path: |
+          ./cache/Cypress
+          ./cache/toolbelt
+          key: ${{ runner.os }}-${{ hashFiles('./cy-runner/yarn.lock') }}
       - name: 'Run Cy-Runner'
         run: yarn cy-r
         env:
