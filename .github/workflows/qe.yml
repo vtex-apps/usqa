@@ -46,10 +46,32 @@ concurrency:
 
 jobs:
 
-  # To speedup let's cache whatever we maybe need
+  # check here if it is safe to run it on pull_request_target events
+  safe:
+    name: 'Security check'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 'Check PR origin'
+        if: | 
+          (github.event_name == 'pull_request_target' && contains(github.event.label.name, 'safe to test')) ||
+          (github.event_name != 'pull_request_target' && github.actor != 'dependabot[bot]')
+        run: exit 0
+      - name: 'Stop if out side without the label "safe to test"'
+        if: (github.event_name == 'pull_request_target' && !contains(github.event.label.name, 'safe to test'))
+        run: |
+          echo "💡 Thank you for bring your contribution on this repository!"
+          echo "   Before the we review this this PR, it must pass our Quality Engineering process."
+          echo "   Please, ask for someone from VTEX to read your changes and add the label 'safe to test' on your PR."
+          echo "   If you made changes on PR after the label, someone need to take it out and add it again."
+          exit 1
+
+  # To speedup let's cache whatever we maybe
+  # Every other job depends on cache, so let's
   cache:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    needs: [ safe ]
     steps:
       - name: 'Checkout main repo'
         uses: actions/checkout@v3
@@ -84,7 +106,7 @@ jobs:
         id: cypress-binary
         with:
           path: ./cache/Cypress
-          key:  ${{ runner.os }}-${{ hashFiles('./cy-runner/yarn.lock') }}
+          key: ${{ runner.os }}-${{ hashFiles('./cy-runner/yarn.lock') }}
       - name: 'Build Cypress binary'
         if: steps.cypress-binary.outputs.cache-hit != 'true'
         run: yarn cypress install
@@ -92,3 +114,37 @@ jobs:
       - name: 'Print Cypress info'
         run: yarn cypress info
         working-directory: ./cy-runner
+
+  lint:
+    name: 'Lint'
+    if: ${{ inputs.runLint }}
+    runs-on: ubuntu-latest
+    needs: [ safe, cache ]
+    steps:
+      - name: 'Checkout main repo'
+        uses: actions/checkout@v3
+      - name: 'Set up NodeJS 16'
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: yarn
+      - name: 'Install Yarn packages'
+        run: |
+          PWD=$(pwd)
+          if [[ -f "package.json" ]]; then
+            # Install root packages
+            yarn install --frozen-lockfile
+          fi
+          if [[ -f "./node/package.json" ]]; then
+            # Install node packages
+            cd ./node && yarn install --frozen-lockfile
+            cd $PWD
+          fi
+          if [[ -f "./react/package.json" ]]; then
+            # Install react packages
+            cd ./react && yarn install --frozen-lockfile
+            cd $PWD
+          fi
+
+
+
