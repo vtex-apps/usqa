@@ -185,6 +185,7 @@ jobs:
     name: 'SonarCloud | C#'
     if: ( inputs.runSonarcloudDN ) && ( github.actor != 'dependabot[bot]' )
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs: [ safe ]
     steps:
       - name: 'Checkout main repo'
@@ -201,6 +202,7 @@ jobs:
     name: 'Cypress'
     if: ( inputs.runCypress ) && ( github.event.pull_request.draft == false )
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [ lint ]
     steps:
       - name: 'Checkout if same repo'
@@ -262,7 +264,7 @@ jobs:
         run: yarn cy-r
         env:
           VTEX_QE: ${{ secrets.cypressJSON }}
-      - name: Save E2E logs
+      - name: Save E2E results
         uses: actions/upload-artifact@v3
         if: always()
         with:
@@ -270,3 +272,4 @@ jobs:
           path: |
             cy-runner/logs
             !cy-runner/logs/**/*.mp4
+          retention-days: 3
