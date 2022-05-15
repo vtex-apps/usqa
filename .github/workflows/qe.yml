@@ -66,59 +66,59 @@ jobs:
 
   # To speedup let's cache whatever we maybe
   # Every other job depends on cache, so let's
-  cache:
-    name: 'Cache'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    needs: [ safe ]
-    steps:
-      - name: 'Checkout main repo'
-        uses: actions/checkout@v3
-      - name: 'Checkout Toolbelt'
-        uses: actions/checkout@v3
-        with:
-          repository: vtex/toolbelt
-          ref: qe/cypress
-          path: toolbelt
-      - name: 'Checkout Cy-Runner'
-        uses: actions/checkout@v3
-        with:
-          repository: vtex-apps/cy-runner
-          ref: main
-          path: cy-runner
-      - name: 'Set up NodeJS 16'
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          cache: yarn
-          cache-dependency-path: |
-            toolbelt/yarn.lock
-            cy-runner/yarn.lock
-      - name: 'Get Toolbelt packages'
-        run: yarn install --frozen-lockfile
-        working-directory: ./toolbelt
-      - name: 'Get Cy-Runner packages'
-        run: yarn install --frozen-lockfile
-        working-directory: ./cy-runner
-      - name: 'Cache Cypress binary'
-        uses: actions/cache@v3
-        id: cypress-binary
-        with:
-          path: ./cache/Cypress
-          key: ${{ runner.os }}-${{ hashFiles('./cy-runner/yarn.lock') }}
-      - name: 'Build Cypress binary'
-        if: steps.cypress-binary.outputs.cache-hit != 'true'
-        run: yarn cypress install
-        working-directory: ./cy-runner
-      - name: 'Print Cypress info'
-        run: yarn cypress info
-        working-directory: ./cy-runner
+#  cache:
+#    name: 'Cache'
+#    runs-on: ubuntu-latest
+#    timeout-minutes: 5
+#    needs: [ safe ]
+#    steps:
+#      - name: 'Checkout main repo'
+#        uses: actions/checkout@v3
+#      - name: 'Checkout Toolbelt'
+#        uses: actions/checkout@v3
+#        with:
+#          repository: vtex/toolbelt
+#          ref: qe/cypress
+#          path: toolbelt
+#      - name: 'Checkout Cy-Runner'
+#        uses: actions/checkout@v3
+#        with:
+#          repository: vtex-apps/cy-runner
+#          ref: main
+#          path: cy-runner
+#      - name: 'Set up NodeJS 16'
+#        uses: actions/setup-node@v3
+#        with:
+#          node-version: 16
+#          cache: yarn
+#          cache-dependency-path: |
+#            toolbelt/yarn.lock
+#            cy-runner/yarn.lock
+#      - name: 'Get Toolbelt packages'
+#        run: yarn install --frozen-lockfile
+#        working-directory: ./toolbelt
+#      - name: 'Get Cy-Runner packages'
+#        run: yarn install --frozen-lockfile
+#        working-directory: ./cy-runner
+#      - name: 'Cache Cypress binary'
+#        uses: actions/cache@v3
+#        id: cypress-binary
+#        with:
+#          path: ./cache/Cypress
+#          key: ${{ runner.os }}-${{ hashFiles('./cy-runner/yarn.lock') }}
+#      - name: 'Build Cypress binary'
+#        if: steps.cypress-binary.outputs.cache-hit != 'true'
+#        run: yarn cypress install
+#        working-directory: ./cy-runner
+#      - name: 'Print Cypress info'
+#        run: yarn cypress info
+#        working-directory: ./cy-runner
 
   lint:
     name: 'Lint'
     if: ${{ inputs.runLint }}
     runs-on: ubuntu-latest
-    needs: [ safe, cache ]
+    needs: [ safe ]
     steps:
       - name: 'Checkout main repo'
         uses: actions/checkout@v3
@@ -127,20 +127,20 @@ jobs:
         with:
           node-version: 16
           cache: yarn
-      - name: 'Install Yarn packages'
+      - name: 'Install yarn packages'
         run: |
           PWD=$(pwd)
           if [[ -f "package.json" ]]; then
-            # Install root packages
+            echo "Install root packages"
             yarn install --frozen-lockfile
           fi
           if [[ -f "./node/package.json" ]]; then
-            # Install node packages
+            echo "Install node packages"
             cd ./node && yarn install --frozen-lockfile
             cd $PWD
           fi
           if [[ -f "./react/package.json" ]]; then
-            # Install react packages
+            echo "Install react packages"
             cd ./react && yarn install --frozen-lockfile
             cd $PWD
           fi
