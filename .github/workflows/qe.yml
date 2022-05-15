@@ -17,12 +17,12 @@ on:
         type: boolean
         default: false
         required: false
-      runSonarCloud:
+      runSonarcloudJS:
         description: 'Run SonarCloud for NodeJS?'
         type: boolean
         default: false
         required: false
-      runSonarClouddotNet:
+      runSonarcloudDN:
         description: 'Run SonarCloud for dotNet?'
         type: boolean
         default: false
@@ -52,13 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: 'Check PR origin'
-        if: | 
-          (github.event_name == 'pull_request_target' && contains(github.event.label.name, 'safe to test')) ||
-          (github.event_name != 'pull_request_target' && github.actor != 'dependabot[bot]') ||
-          (github.event_name == 'push')
-        run: exit 0
-      - name: 'Stop if out side without the label "safe to test"'
+      - name: 'Stop if from out side without the label "safe to test"'
         if: (github.event_name == 'pull_request_target' && !contains(github.event.label.name, 'safe to test'))
         run: |
           echo "💡 Thank you for bring your contribution on this repository!"
@@ -147,5 +141,66 @@ jobs:
             cd $PWD
           fi
 
+  unitTests:
+    name: 'Unit tests'
+    if: ${{ inputs.runUnitTests }}
+    runs-on: ubuntu-latest
+    needs: [ lint ]
+    steps:
+      - name: 'Checkout main repo'
+        uses: actions/checkout@v3
+      - name: 'Set up NodeJS 16'
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: yarn
+      - name: 'Install Yarn packages'
+        run: echo "TODO"
 
+  sonarcloudJS:
+    name: 'SonarCloud | NodeJS'
+    if: ${{ inputs.runSonarcloudJS }}
+    runs-on: ubuntu-latest
+    needs: [ lint ]
+    steps:
+      - name: 'Checkout main repo'
+        uses: actions/checkout@v3
+      - name: 'Set up NodeJS 16'
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: yarn
+      - name: 'Install Yarn packages'
+        run: echo "TODO"
 
+  sonarcloudDN:
+    name: 'SonarCloud | dotNet'
+    if: ${{ inputs.runSonarcloudDN }}
+    runs-on: ubuntu-latest
+    needs: [ lint ]
+    steps:
+      - name: 'Checkout main repo'
+        uses: actions/checkout@v3
+      - name: 'Set up NodeJS 16'
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: yarn
+      - name: 'Install Yarn packages'
+        run: echo "TODO"
+
+  cypress:
+    name: 'Cypress'
+    if: ${{ inputs.runCypress }}
+    runs-on: ubuntu-latest
+    needs: [ sonarcloudJS, sonarcloudDN ]
+    steps:
+      - name: 'Checkout main repo'
+        uses: actions/checkout@v3
+      - name: 'Set up NodeJS 16'
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: yarn
+      - name: 'Install Yarn packages'
+        run: echo "TODO"
