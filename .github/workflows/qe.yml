@@ -257,8 +257,8 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-          ./cache/Cypress
-          ./cache/toolbelt
+            ./cache/Cypress
+            ./cache/toolbelt
           key: ${{ runner.os }}-${{ hashFiles('./cy-runner/yarn.lock') }}
       - name: 'Run Cy-Runner'
         run: yarn cy-r
