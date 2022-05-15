@@ -86,7 +86,7 @@ jobs:
           path: ./cache/Cypress
           key:  ${{ runner.os }}-${{ hashFiles('./cy-runner/yarn.lock') }}
       - name: 'Build Cypress binary'
-        if: step.cypress-binary.outputs.cache-hit != 'true'
+        if: steps.cypress-binary.outputs.cache-hit != 'true'
         run: yarn cypress install
         working-directory: ./cy-runner
       - name: 'Print Cypress info'
