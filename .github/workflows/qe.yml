@@ -40,9 +40,13 @@ on:
         description: 'A JSON to pass make Cy-Runner works'
         required: false
 
+# Let's not allow concurrency
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: false
+
+env:
+  NODE_VERSION: 16
 
 jobs:
 
@@ -126,7 +130,7 @@ jobs:
       - name: 'Set up NodeJS 16'
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: $NODE_VERSION
           cache: yarn
       - name: 'Install yarn packages'
         run: |
@@ -156,10 +160,10 @@ jobs:
     steps:
       - name: 'Checkout main repo'
         uses: actions/checkout@v3
-      - name: 'Set up NodeJS 16'
+      - name: 'Set up NodeJS'
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: $NODE_VERSION
           cache: yarn
       - name: 'Install Yarn packages'
         run: echo "TODO"
@@ -168,17 +172,37 @@ jobs:
     name: 'SonarCloud | NodeJS'
     if: ${{ inputs.runSonarcloudJS }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs: [ lint ]
     steps:
       - name: 'Checkout main repo'
         uses: actions/checkout@v3
-      - name: 'Set up NodeJS 16'
+        with:
+          fetch-depth: 0
+      - name: 'Set up NodeJS'
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: $NODE_VERSION
           cache: yarn
-      - name: 'Install Yarn packages'
-        run: echo "TODO"
+      - name: 'Install yarn packages'
+        run: |
+          PWD=$(pwd)
+          if [[ -f "package.json" ]]; then
+            echo "Install root packages"
+            yarn install --frozen-lockfile
+          fi
+          if [[ -f "./node/package.json" ]]; then
+            echo "Install node packages"
+            cd ./node && yarn install --frozen-lockfile
+            cd $PWD
+          fi
+          if [[ -f "./react/package.json" ]]; then
+            echo "Install react packages"
+            cd ./react && yarn install --frozen-lockfile
+            cd $PWD
+          fi
+      - name: 'SonarCloud Scan'
+        uses: SonarSource/sonarcloud-github-action@v1.6
 
   sonarcloudDN:
     name: 'SonarCloud | dotNet'
@@ -188,10 +212,10 @@ jobs:
     steps:
       - name: 'Checkout main repo'
         uses: actions/checkout@v3
-      - name: 'Set up NodeJS 16'
+      - name: 'Set up NodeJS'
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: $NODE_VERSION
           cache: yarn
       - name: 'Install Yarn packages'
         run: echo "TODO"
@@ -204,10 +228,10 @@ jobs:
     steps:
       - name: 'Checkout main repo'
         uses: actions/checkout@v3
-      - name: 'Set up NodeJS 16'
+      - name: 'Set up NodeJS'
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: $NODE_VERSION
           cache: yarn
       - name: 'Install Yarn packages'
         run: echo "TODO"
