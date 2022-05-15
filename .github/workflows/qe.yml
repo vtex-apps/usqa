@@ -129,14 +129,10 @@ jobs:
     steps:
       - name: 'Checkout if same repo'
         uses: actions/checkout@v3
-        if: >-
-          ( github.event_name == 'pull_request'  || github.event_name == 'push' ) &&
-          ( github.event.pull_request.head.repo.fork == false )
+        if: ( github.event.pull_request.head.repo.fork == false )
       - name: 'Checkout if fork'
         uses: actions/checkout@v3
-        if: >-
-          ( github.event_name == 'pull_request_target' ) &&
-          ( github.event.pull_request.head.repo.fork == true )
+        if: ( github.event.pull_request.head.repo.fork == true )
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
@@ -173,14 +169,10 @@ jobs:
     steps:
       - name: 'Checkout if same repo'
         uses: actions/checkout@v3
-        if: >-
-          ( github.event_name == 'pull_request' ) &&
-          ( github.event.pull_request.head.repo.fork == false )
+        if: ( github.event.pull_request.head.repo.fork == false )
       - name: 'Checkout if fork'
         uses: actions/checkout@v3
-        if: >-
-          ( github.event_name == 'pull_request_target' ) &&
-          ( github.event.pull_request.head.repo.fork == true )
+        if: ( github.event.pull_request.head.repo.fork == true )
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
@@ -201,16 +193,12 @@ jobs:
     steps:
       - name: 'Checkout if same repo'
         uses: actions/checkout@v3
-        if: >-
-          ( github.event_name == 'pull_request' ) &&
-          ( github.event.pull_request.head.repo.fork == false )
+        if: ( github.event.pull_request.head.repo.fork == false )
         with:
           fetch-depth: 0
       - name: 'Checkout if fork'
         uses: actions/checkout@v3
-        if: >-
-          ( github.event_name == 'pull_request_target' ) &&
-          ( github.event.pull_request.head.repo.fork == true )
+        if: ( github.event.pull_request.head.repo.fork == true )
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
@@ -267,16 +255,12 @@ jobs:
     steps:
       - name: 'Checkout if same repo'
         uses: actions/checkout@v3
-        if: >-
-          ( github.event_name == 'pull_request' ) &&
-          ( github.event.pull_request.head.repo.fork == false )
+        if: ( github.event.pull_request.head.repo.fork == false )
         with:
           fetch-depth: 0
       - name: 'Checkout if fork'
         uses: actions/checkout@v3
-        if: >-
-          ( github.event_name == 'pull_request_target' ) &&
-          ( github.event.pull_request.head.repo.fork == true )
+        if: ( github.event.pull_request.head.repo.fork == true )
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
