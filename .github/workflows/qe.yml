@@ -53,26 +53,42 @@ jobs:
     steps:
       - name: 'Checkout main repo'
         uses: actions/checkout@v3
-        with:
-          path: code
       - name: 'Checkout Toolbelt'
         uses: actions/checkout@v3
         with:
           repository: vtex/toolbelt
           ref: qe/cypress
-          path: code/toolbelt
+          path: toolbelt
       - name: 'Checkout Cy-Runner'
         uses: actions/checkout@v3
         with:
           repository: vtex-apps/cy-runner
           ref: main
-          path: code/cy-runner
+          path: cy-runner
       - name: 'Set up NodeJS 16'
         uses: actions/setup-node@v3
         with:
           node-version: 16
           cache: yarn
-          cache-dependency-path: $(find . -maxdepth 2 -name yarn.lock)
-      - name: 'Get YARN packages'
-        run: |
-          ls -R
+          cache-dependency-path: |
+            toolbelt/yarn.lock
+            cy-runner/yarn.lock
+      - name: 'Get Toolbelt packages'
+        run: yarn install --frozen-lockfile
+        working-directory: ./toolbelt
+      - name: 'Get Cy-Runner packages'
+        run: yarn install --frozen-lockfile
+        working-directory: ./cy-runner
+      - name: 'Cache Cypress binary'
+        uses: actions/cache@v3
+        id: cypress-binary
+        with:
+          path: ./cache/Cypress
+          key:  ${{ runner.os }}-${{ hashFiles('./cy-runner/yarn.lock') }}
+      - name: 'Build Cypress binary'
+        if: step.cypress-binary.outputs.cache-hit != 'true'
+        run: yarn cypress install
+        working-directory: ./cy-runner
+      - name: 'Print Cypress info'
+        run: yarn cypress info
+        working-directory: ./cy-runner
