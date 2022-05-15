@@ -33,10 +33,13 @@ on:
         default: false
         required: false
     secrets:
-      sonar:
+      githubToken:
+        description: 'A token to access GitHub staff'
+        required: false
+      sonarToken:
         description: 'A token to have access to SonarCloud'
         required: false
-      cypress:
+      cypressJson:
         description: 'A JSON to pass make Cy-Runner works'
         required: false
 
@@ -236,6 +239,9 @@ jobs:
           fi
       - name: 'SonarCloud Scan'
         uses: SonarSource/sonarcloud-github-action@v1.6
+        env:
+          GITHUB_TOKEN: ${{ secrets.githubToken }}
+          SONAR_TOKEN: ${{ secrets.sonarToken }}
 
   sonarcloudDN:
     name: 'SonarCloud | dotNet'
