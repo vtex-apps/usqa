@@ -33,8 +33,12 @@ on:
         default: false
         required: false
     secrets:
-      SONAR_TOKEN:
-      VTEX_QE:
+      sonar:
+        description: 'A token to have access to SonarCloud'
+        required: false
+      cypress:
+        description: 'A JSON to pass make Cy-Runner works'
+        required: false
 
 concurrency:
   group: ${{ github.workflow }}
