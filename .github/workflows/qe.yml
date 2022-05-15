@@ -50,7 +50,7 @@ jobs:
   safe:
     name: 'Security check'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 1
     steps:
       - name: 'Stop if from out side without the label "safe to test"'
         if: (github.event_name == 'pull_request_target' && !contains(github.event.label.name, 'safe to test'))
@@ -118,6 +118,7 @@ jobs:
     name: 'Lint'
     if: ${{ inputs.runLint }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs: [ safe ]
     steps:
       - name: 'Checkout main repo'
@@ -144,6 +145,8 @@ jobs:
             cd ./react && yarn install --frozen-lockfile
             cd $PWD
           fi
+      - name: 'Run lint'
+        run: yarn lint
 
   unitTests:
     name: 'Unit tests'
