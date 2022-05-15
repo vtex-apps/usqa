@@ -264,6 +264,7 @@ jobs:
         run: yarn cy-r
         env:
           VTEX_QE: ${{ secrets.cypressJSON }}
+          NODE_NO_WARNINGS: 1
       - name: Save E2E results
         uses: actions/upload-artifact@v3
         if: always()
