@@ -55,7 +55,8 @@ jobs:
       - name: 'Check PR origin'
         if: | 
           (github.event_name == 'pull_request_target' && contains(github.event.label.name, 'safe to test')) ||
-          (github.event_name != 'pull_request_target' && github.actor != 'dependabot[bot]')
+          (github.event_name != 'pull_request_target' && github.actor != 'dependabot[bot]') ||
+          (github.event_name == 'push')
         run: exit 0
       - name: 'Stop if out side without the label "safe to test"'
         if: (github.event_name == 'pull_request_target' && !contains(github.event.label.name, 'safe to test'))
