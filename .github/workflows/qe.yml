@@ -58,7 +58,7 @@ jobs:
     steps:
       - name: 'Stop if from out side without the label "safe to test"'
         if: >-
-          ( github.event.pull_request.head.repo.fork == true ) ||
+          ( github.event.pull_request.head.repo.fork == true ) &&
           ( !contains(github.event.pull_request.labels.*.name, 'safe to test') )
         run: |
           echo "Attention:"
