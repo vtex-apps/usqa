@@ -1,0 +1,70 @@
+name: '[QE] Quality Engineering'
+
+on:
+  workflow_call:
+    inputs:
+      runLint:
+        description: 'Run Lint?'
+        type: boolean
+        default: false
+        required: false
+      runUnitTests:
+        description: 'Run Unit Tests?'
+        type: boolean
+        default: false
+        required: false
+      runSonarCloud:
+        description: 'Run SonarCloud for NodeJS?'
+        type: boolean
+        default: false
+        required: false
+      runSonarClouddotNet:
+        description: 'Run SonarCloud for dotNet?'
+        type: boolean
+        default: false
+        required: false
+      runCypress:
+        description: 'Run Cypress?'
+        type: boolean
+        default: false
+        required: false
+    secrets:
+      SONAR_TOKEN:
+      VTEX_QE:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+
+  # To speedup let's cache whatever we maybe need
+  cache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 'Checkout main repo'
+        uses: actions/checkout@v3
+        with:
+          path: code
+      - name: 'Checkout Toolbelt'
+        uses: actions/checkout@v3
+        with:
+          repository: vtex/toolbelt
+          ref: qe/cypress
+          path: code/toolbelt
+      - name: 'Checkout Cy-Runner'
+        uses: actions/checkout@v3
+        with:
+          repository: vtex-apps/cy-runner
+          ref: main
+          path: code/cy-runner
+      - name: 'Set up NodeJS 16'
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: yarn
+          cache-dependency-path: $(find . -maxdepth 2 -name yarn.lock)
+      - name: 'Get YARN packages'
+        run: |
+          ls -R
