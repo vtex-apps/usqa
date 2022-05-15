@@ -1,6 +1,10 @@
 name: '[QE] Quality Engineering'
 
 on:
+  # Just for debugging purposes
+  workflow_dispatch:
+
+  # Allow this to be called by others
   workflow_call:
     inputs:
       runLint:
