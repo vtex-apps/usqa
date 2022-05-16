@@ -135,7 +135,7 @@ jobs:
         run: echo 1
 
   sonarcloudJS:
-    name: 'SonarCloud | JS'
+    name: 'SonarCloud / JS'
     if: ( inputs.runSonarcloudJS ) && ( github.actor != 'dependabot[bot]' )
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -182,7 +182,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.sonarToken }}
 
   sonarcloudDN:
-    name: 'SonarCloud | C#'
+    name: 'SonarCloud / C#'
     if: ( inputs.runSonarcloudDN ) && ( github.actor != 'dependabot[bot]' )
     runs-on: ubuntu-latest
     timeout-minutes: 5
