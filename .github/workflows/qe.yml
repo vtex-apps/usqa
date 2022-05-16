@@ -79,6 +79,7 @@ jobs:
         uses: actions-ecosystem/action-remove-labels@v1
         with:
           labels: safe to test
+          GITHUB_TOKEN: ${{ secrets.githubToken }}
 
   lint:
     name: 'Lint'
