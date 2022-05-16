@@ -147,7 +147,7 @@ jobs:
 
   sonarcloudJS:
     name: 'SonarCloud / JS'
-    if: ( inputs.runSonarcloudJS ) && ( github.actor != 'dependabot[bot]' )
+    if: ( inputs.runJSSonar ) && ( github.actor != 'dependabot[bot]' )
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [ lint ]
@@ -207,7 +207,7 @@ jobs:
 
   sonarcloudDN:
     name: 'SonarCloud / C#'
-    if: ( inputs.runSonarcloudDN ) && ( github.actor != 'dependabot[bot]' )
+    if: ( inputs.runDNSonar ) && ( github.actor != 'dependabot[bot]' )
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [ safe ]
