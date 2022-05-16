@@ -175,11 +175,24 @@ jobs:
             cd ./react && yarn install --frozen-lockfile
             cd $PWD
           fi
-      - name: 'SonarCloud Scan'
+      - name: 'SonarCloud Scan if same repo'
+        if: ( github.event.pull_request.head.repo.fork == false )
         uses: SonarSource/sonarcloud-github-action@v1.6
         env:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
           SONAR_TOKEN: ${{ secrets.sonarToken }}
+      - name: 'SonarCloud Scan if fork'
+        if: ( github.event.pull_request.head.repo.fork == true )
+        uses: SonarSource/sonarcloud-github-action@v1.6
+        env:
+          GITHUB_TOKEN: ${{ secrets.githubToken }}
+          SONAR_TOKEN: ${{ secrets.sonarToken }}
+        with:
+           # SonarCloud doesn't treat pull_request_target, so we need this
+          args: >
+            -Dsonar.pullrequest.key=${{ github.event.pull_request.number }} 
+            -Dsonar.pullrequest.branch=${{ github.event.pull_request.head.ref }} 
+            -Dsonar.scm.revision=${{ github.event.pull_request.head.sha }} 
 
   sonarcloudDN:
     name: 'SonarCloud / C#'
