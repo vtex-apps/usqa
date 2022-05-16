@@ -12,22 +12,22 @@ on:
         type: boolean
         default: false
         required: false
-      runJSUnitTests:
+      runUnitTestsJS:
         description: 'Run JS Unit Tests?'
         type: boolean
         default: false
         required: false
-      cmdJSUnitTests:
+      cmdUnitTestsJS:
         description: 'What is the JS command to run unit tests?'
         type: string
         default: yarn test --coverage
         required: false
-      runJSSonar:
+      runSonarCloudJS:
         description: 'Run SonarCloud for NodeJS?'
         type: boolean
         default: false
         required: false
-      runDNSonar:
+      runSonarCloudDN:
         description: 'Run SonarCloud for dotNet?'
         type: boolean
         default: false
@@ -147,7 +147,7 @@ jobs:
 
   sonarcloudJS:
     name: 'SonarCloud / JS'
-    if: ( inputs.runJSSonar ) && ( github.actor != 'dependabot[bot]' )
+    if: ( inputs.runSonarCloudJS ) && ( github.actor != 'dependabot[bot]' )
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [ lint ]
@@ -207,7 +207,7 @@ jobs:
 
   sonarcloudDN:
     name: 'SonarCloud / C#'
-    if: ( inputs.runDNSonar ) && ( github.actor != 'dependabot[bot]' )
+    if: ( inputs.runSonarCloudDN ) && ( github.actor != 'dependabot[bot]' )
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [ safe ]
