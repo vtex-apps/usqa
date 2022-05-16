@@ -12,17 +12,22 @@ on:
         type: boolean
         default: false
         required: false
-      runUnitTests:
-        description: 'Run Unit Tests?'
+      runJSUnitTests:
+        description: 'Run JS Unit Tests?'
         type: boolean
         default: false
         required: false
-      runSonarcloudJS:
+      cmdJSUnitTests:
+        description: 'What is the JS command to run unit tests?'
+        type: string
+        default: yarn test --coverage
+        required: false
+      runJSSonar:
         description: 'Run SonarCloud for NodeJS?'
         type: boolean
         default: false
         required: false
-      runSonarcloudDN:
+      runDNSonar:
         description: 'Run SonarCloud for dotNet?'
         type: boolean
         default: false
@@ -69,6 +74,11 @@ jobs:
           echo " "
           echo "   If you made changes after the approval, someone needs redo the label thing."
           exit 1
+      - name: 'Remove the label "safe to test" to avoid run again on changed code'
+        if: ( contains(github.event.pull_request.labels.*.name, 'safe to test') )
+        uses: actions-ecosystem/action-remove-labels@v1
+        with:
+          labels: safe to test
 
   lint:
     name: 'Lint'
