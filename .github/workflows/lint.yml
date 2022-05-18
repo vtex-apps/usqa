@@ -34,5 +34,6 @@ jobs:
               yarn install --frozen-lockfile
               cd $PWD
             fi
+          done
       - name: 'Run lint'
         run: yarn lint
