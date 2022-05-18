@@ -4,6 +4,24 @@ on:
   # Allow this to be called by others
   workflow_call:
 
+env:
+  LOOP_YARN: |
+    PWD=$(pwd)
+    if [[ -f "package.json" ]]; then
+      echo "Install root packages"
+      yarn install --frozen-lockfile
+    fi
+    if [[ -f "./node/package.json" ]]; then
+      echo "Install node packages"
+      cd ./node && yarn install --frozen-lockfile
+      cd $PWD
+    fi
+    if [[ -f "./react/package.json" ]]; then
+      echo "Install react packages"
+      cd ./react && yarn install --frozen-lockfile
+      cd $PWD
+    fi
+
 jobs:
   lint:
     name: 'QE'
@@ -25,15 +43,6 @@ jobs:
           node-version: 16
           cache: yarn
       - name: 'Install packages'
-        run: |
-          PWD=$(pwd)
-          for DIR in '.' './node' './react'; do
-            if [[ -f "$DIR/package.json" ]]; then
-              echo "Installing $DIR packages..."
-              cd $DIR 
-              yarn install --frozen-lockfile
-              cd $PWD
-            fi
-          done
+        run: cat $LOOP_YARN > yarn.sh && bash yarn.sh
       - name: 'Run lint'
         run: yarn lint
