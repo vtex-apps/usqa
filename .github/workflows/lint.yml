@@ -27,7 +27,7 @@ jobs:
       - name: 'Install packages'
         run: |
           PWD=$(pwd)
-          for DIR in '.' './node' './react; do
+          for DIR in '.' './node' './react'; do
             if [[ -f "$DIR/package.json" ]]; then
               echo "Installing $DIR packages..."
               cd $DIR 
