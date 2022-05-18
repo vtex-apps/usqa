@@ -43,6 +43,6 @@ jobs:
           node-version: 16
           cache: yarn
       - name: 'Install packages'
-        run: cat $LOOP_YARN > yarn.sh && bash yarn.sh
+        run: echo $LOOP_YARN | bash -
       - name: 'Run lint'
         run: yarn lint
