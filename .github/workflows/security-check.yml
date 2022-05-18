@@ -7,7 +7,7 @@ on:
 jobs:
   # check here if it is safe to run it on pull_request_target events
   safe:
-    name: 'Security check'
+    name: 'QE'
     runs-on: ubuntu-latest
     timeout-minutes: 1
     steps:
