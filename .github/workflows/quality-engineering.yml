@@ -137,12 +137,7 @@ jobs:
           labels: safe to test
           GITHUB_TOKEN: ${{ secrets.githubToken }}
       - name: Just a test
-        run: |
-          echo github.pull_request
-          echo github.pull_request_target
-          echo ${{ github.pull_request }}
-          echo ${{ github.pull_request_target }}
-          echo ${{ pull_request }}
+        run: echo "$GITHUB_CONTEXT"
       - name: Fail
         run: exit 1
 
