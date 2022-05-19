@@ -121,7 +121,6 @@ jobs:
   safeCheck:
     name: 'Security check'
     runs-on: ubuntu-latest
-    timeout-minutes: 0.5
     steps:
       - name: 'Stop if from out side without the label "safe to test"'
         if: >-
@@ -142,12 +141,22 @@ jobs:
         with:
           labels: safe to test
           GITHUB_TOKEN: ${{ secrets.githubToken }}
+      - name: 'Create a file'
+        run: touch /mnt/charles
       - name: Debug
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled }}
-        timeout-minutes: 15
+        timeout-minutes: 5
         uses: mxschmitt/action-tmate@v3
         with:
           limit-access-to-actor: true
+
+  testFiles:
+    name: 'Check Files'
+    runs-on: ubuntu-latest
+    needs: [safeCheck]
+    steps:
+      - name: Check
+        run: ls -lah /mnt
 
   nodeLint:
     name: 'Lint / node'
