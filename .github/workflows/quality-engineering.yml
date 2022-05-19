@@ -142,7 +142,7 @@ jobs:
           labels: safe to test
           GITHUB_TOKEN: ${{ secrets.githubToken }}
       - name: 'Create a file'
-        run: touch /mnt/charles
+        run: sudo touch /mnt/charles
       - name: Debug
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled }}
         timeout-minutes: 5
