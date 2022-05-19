@@ -1,43 +1,86 @@
 name: '[QE] Quality Engineering'
 
 on:
-  # Just for debugging purposes
-  workflow_dispatch:
-
   # Allow this to be called by others
   workflow_call:
     inputs:
-      runLint:
-        description: 'Run Lint?'
+      # -----------------------------------------------------------------------------------------
+      # Danger Section
+      # -----------------------------------------------------------------------------------------
+      danger:
+        description: 'Run node Danger action?'
         type: boolean
         default: false
         required: false
-      runUnitTestsJS:
-        description: 'Run JS Unit Tests?'
+      dangerRequireChanglog:
+        description: 'Require changlog version for Danger?'
         type: boolean
         default: false
         required: false
-      cmdUnitTestsJS:
+      # -----------------------------------------------------------------------------------------
+      # Node JS Section [Lint, Tests, Sonar]
+      # -----------------------------------------------------------------------------------------
+      nodeLint:
+        description: 'Run node lint?'
+        type: boolean
+        default: false
+        required: false
+      # Unit tests for NodeJS
+      nodeTest:
+        description: 'Run node unit tests?'
+        type: boolean
+        default: false
+        required: false
+      nodeTestCmd:
         description: 'What is the JS command to run unit tests?'
         type: string
         default: yarn test --coverage
         required: false
-      runSonarCloudJS:
-        description: 'Run SonarCloud for NodeJS?'
+      nodeSonar:
+        description: 'Run node SonarCloud?'
         type: boolean
         default: false
         required: false
-      runSonarCloudDN:
+      nodeSonarProjectKey:
+        description: 'What is the SonarCloud project for Node?'
+        type: string
+        default: none
+        required: false
+      nodeSonarOrganization:
+        description: 'What is the SonarCloud Organization for Node?'
+        type: string
+        default: none
+        required: false
+      # -----------------------------------------------------------------------------------------
+      # dotNet Section [Sonar]
+      # -----------------------------------------------------------------------------------------
+      dotnetSonar:
         description: 'Run SonarCloud for dotNet?'
         type: boolean
         default: false
         required: false
-      runCypress:
-        description: 'Run Cypress?'
+      dotnetSonarProjectKey:
+        description: 'What is the SonarCloud project for dotnet?'
+        type: string
+        default: none
+        required: false
+      dotnetSonarOrganization:
+        description: 'What is the SonarCloud Organization for dotnet?'
+        type: string
+        default: none
+        required: false
+      # -----------------------------------------------------------------------------------------
+      # Cypress section
+      # -----------------------------------------------------------------------------------------
+      cypress:
+        description: 'Do E2E tests?'
         type: boolean
         default: false
         required: false
     secrets:
+      # -----------------------------------------------------------------------------------------
+      # Secretes for GitHub token, SonarCloud token and Cypress JSON
+      # -----------------------------------------------------------------------------------------
       githubToken:
         description: 'A token to access GitHub staff'
         required: false
@@ -48,18 +91,29 @@ on:
         description: 'A JSON to pass make Cy-Runner works'
         required: false
 
+env:
+  # As we do theses steps a lot, let fix it here
+  LOOP_YARN: |
+    PWD=$(pwd)
+    for DIR in '.' 'node' 'react'; do
+      if [[ -f "$DIR/package.json" ]]; then
+        echo "Installing $DIR packages..."
+        cd "$PWD/$DIR"
+        yarn install --frozen-lockfile
+      fi
+    done
+
 # Let's not allow concurrency
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: false
 
 jobs:
-
   # check here if it is safe to run it on pull_request_target events
-  safe:
+  safeCheck:
     name: 'Security check'
     runs-on: ubuntu-latest
-    timeout-minutes: 1
+    timeout-minutes: 0.5
     steps:
       - name: 'Stop if from out side without the label "safe to test"'
         if: >-
@@ -80,18 +134,28 @@ jobs:
         with:
           labels: safe to test
           GITHUB_TOKEN: ${{ secrets.githubToken }}
+      - name: Just a test
+        run: |
+          echo github.pull_request
+          echo github.pull_request_target
+          echo pull_request
+          echo ${{ github.pull_request }}
+          echo ${{ github.pull_request_target }}
+          echo ${{ pull_request }}
+      - name: Fail
+        run: exit 1
 
-  lint:
-    name: 'Lint'
-    if: ${{ inputs.runLint }}
+  nodeLint:
+    name: 'Lint / node'
+    if: ${{ inputs.nodeLint }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [ safe ]
+    needs: [safeCheck]
     steps:
-      - name: 'Checkout if same repo'
+      - name: 'Trusted checkout'
         uses: actions/checkout@v3
         if: ( github.event.pull_request.head.repo.fork == false )
-      - name: 'Checkout if fork'
+      - name: 'Untrusted checkout'
         uses: actions/checkout@v3
         if: ( github.event.pull_request.head.repo.fork == true )
         with:
@@ -102,36 +166,21 @@ jobs:
         with:
           node-version: 16
           cache: yarn
-      - name: 'Install yarn packages'
-        run: |
-          PWD=$(pwd)
-          if [[ -f "package.json" ]]; then
-            echo "Install root packages"
-            yarn install --frozen-lockfile
-          fi
-          if [[ -f "./node/package.json" ]]; then
-            echo "Install node packages"
-            cd ./node && yarn install --frozen-lockfile
-            cd $PWD
-          fi
-          if [[ -f "./react/package.json" ]]; then
-            echo "Install react packages"
-            cd ./react && yarn install --frozen-lockfile
-            cd $PWD
-          fi
+      - name: 'Install packages'
+        run: bash -c "$LOOP_YARN"
       - name: 'Run lint'
         run: yarn lint
 
-  unitTests:
-    name: 'Unit tests'
-    if: ${{ inputs.runUnitTests }}
+  nodeTest:
+    name: 'Unit tests / node'
+    if: ${{ inputs.nodeTest }}
     runs-on: ubuntu-latest
-    needs: [ lint ]
+    needs: [nodeLint]
     steps:
-      - name: 'Checkout if same repo'
+      - name: 'Trusted checkout'
         uses: actions/checkout@v3
         if: ( github.event.pull_request.head.repo.fork == false )
-      - name: 'Checkout if fork'
+      - name: 'Untrusted checkout'
         uses: actions/checkout@v3
         if: ( github.event.pull_request.head.repo.fork == true )
         with:
@@ -145,19 +194,19 @@ jobs:
       - name: 'Not ready yet'
         run: echo 1
 
-  sonarcloudJS:
-    name: 'SonarCloud / JS'
-    if: ( inputs.runSonarCloudJS ) && ( github.actor != 'dependabot[bot]' )
+  nodeSonar:
+    name: 'Sonar / node'
+    if: ( inputs.nodeSonar ) && ( github.actor != 'dependabot[bot]' )
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [ lint ]
+    needs: [nodeLint]
     steps:
-      - name: 'Checkout if same repo'
+      - name: 'Trusted checkout'
         uses: actions/checkout@v3
         if: ( github.event.pull_request.head.repo.fork == false )
         with:
           fetch-depth: 0
-      - name: 'Checkout if fork'
+      - name: 'Untrusted checkout'
         uses: actions/checkout@v3
         if: ( github.event.pull_request.head.repo.fork == true )
         with:
@@ -169,78 +218,62 @@ jobs:
         with:
           node-version: 16
           cache: yarn
-      - name: 'Install yarn packages'
-        run: |
-          PWD=$(pwd)
-          if [[ -f "package.json" ]]; then
-            echo "Install root packages"
-            yarn install --frozen-lockfile
-          fi
-          if [[ -f "./node/package.json" ]]; then
-            echo "Install node packages"
-            cd ./node && yarn install --frozen-lockfile
-            cd $PWD
-          fi
-          if [[ -f "./react/package.json" ]]; then
-            echo "Install react packages"
-            cd ./react && yarn install --frozen-lockfile
-            cd $PWD
-          fi
-      - name: 'SonarCloud Scan if same repo'
+      - name: 'Install packages'
+        run: bash -c "$LOOP_YARN"
+      - name: 'Trusted SonarCloud Scan'
         if: ( github.event.pull_request.head.repo.fork == false )
         uses: SonarSource/sonarcloud-github-action@v1.6
         env:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
           SONAR_TOKEN: ${{ secrets.sonarToken }}
-      - name: 'SonarCloud Scan if fork'
+      - name: 'Untrusted SonarCloud Scan'
         if: ( github.event.pull_request.head.repo.fork == true )
         uses: SonarSource/sonarcloud-github-action@v1.6
         env:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
           SONAR_TOKEN: ${{ secrets.sonarToken }}
         with:
-           # SonarCloud doesn't treat pull_request_target, so we need this
+          # SonarCloud doesn't treat pull_request_target, so we need this
           args: >
             -Dsonar.pullrequest.key=${{ github.event.pull_request.number }} 
             -Dsonar.pullrequest.branch=${{ github.event.pull_request.head.ref }} 
-            -Dsonar.scm.revision=${{ github.event.pull_request.head.sha }} 
+            -Dsonar.scm.revision=${{ github.event.pull_request.head.sha }}
 
-  sonarcloudDN:
-    name: 'SonarCloud / C#'
-    if: ( inputs.runSonarCloudDN ) && ( github.actor != 'dependabot[bot]' )
+  dotnetSonar:
+    name: 'Sonar / dotnet'
+    if: ( inputs.dotnetSonar ) && ( github.actor != 'dependabot[bot]' )
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [ safe ]
+    needs: [safeCheck]
     steps:
-      - name: 'Checkout main repo'
+      - name: 'Trusted checkout'
         uses: actions/checkout@v3
-      - name: 'Set up NodeJS'
-        uses: actions/setup-node@v3
+        if: ( github.event.pull_request.head.repo.fork == false )
         with:
-          node-version: 16
-          cache: yarn
+          fetch-depth: 0
+      - name: 'Untrusted checkout'
+        uses: actions/checkout@v3
+        if: ( github.event.pull_request.head.repo.fork == true )
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          fetch-depth: 0
       - name: 'Not ready yet'
         run: echo 1
 
   cypress:
     name: 'Cypress'
-    if: ( inputs.runCypress ) && ( github.event.pull_request.draft == false )
+    if: ( inputs.cypress ) && ( github.event.pull_request.draft == false )
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: [ lint ]
+    needs: [safeCheck]
     steps:
-      - name: 'Checkout if same repo'
+      - name: 'Trusted checkout'
         uses: actions/checkout@v3
         if: ( github.event.pull_request.head.repo.fork == false )
-        with:
-          fetch-depth: 0
-      - name: 'Checkout if fork'
+      - name: 'Untrusted checkout'
         uses: actions/checkout@v3
         if: ( github.event.pull_request.head.repo.fork == true )
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          fetch-depth: 0
       - name: 'Checkout Cy-Runner'
         uses: actions/checkout@v3
         with:
@@ -252,48 +285,24 @@ jobs:
         with:
           node-version: 16
           cache: yarn
-      - name: 'Install yarn packages'
+      - name: 'Install packages'
+        run: bash -c "$LOOP_YARN"
+      - name: 'Install Cy-Runner'
         run: |
-          PWD=$(pwd)
-          if [[ -f "package.json" ]]; then
-            echo "Install root packages"
-            yarn install --frozen-lockfile
-          fi
-          if [[ -f "./node/package.json" ]]; then
-            echo "Install node packages"
-            cd ./node && yarn install --frozen-lockfile
-            cd $PWD
-          fi
-          if [[ -f "./react/package.json" ]]; then
-            echo "Install react packages"
-            cd ./react && yarn install --frozen-lockfile
-            cd $PWD
-          fi
-          if [[ -f "./cy-runner/package.json" ]]; then
-            echo "Install cy-runner packages"
-            cd ./cy-runner && yarn install --frozen-lockfile && rm -rf .git
-            cd $PWD
-          fi
-      - name: 'Check Cypress version'
-        run: yarn cypress info
-        working-directory: ./cy-runner
-      - name: 'Cache binaries'
-        uses: actions/cache@v3
-        with:
-          path: |
-            ./cache/Cypress
-            ./cache/toolbelt
-          key: ${{ runner.os }}-${{ hashFiles('./cy-runner/yarn.lock') }}
+          yarn install --frozen-lockfile 
+          rm -rf .git
+          yarn cypress info
+        working-directory: cy-runner
       - name: 'Run Cy-Runner'
         run: yarn cy-r
         env:
           VTEX_QE: ${{ secrets.cypressJSON }}
           NODE_NO_WARNINGS: 1
-      - name: Save E2E results
+      - name: Save results
         uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: e2e-logs
+          name: cy-runner-logs
           path: |
             cy-runner/logs
             !cy-runner/logs/**/*.mp4
