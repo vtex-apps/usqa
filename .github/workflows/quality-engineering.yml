@@ -143,6 +143,7 @@ jobs:
           labels: safe to test
           GITHUB_TOKEN: ${{ secrets.githubToken }}
       - name: Debug
+        timeout-minutes: 15
         uses: mxschmitt/action-tmate@v3
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled }}
 
