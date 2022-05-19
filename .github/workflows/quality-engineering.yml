@@ -143,9 +143,11 @@ jobs:
           labels: safe to test
           GITHUB_TOKEN: ${{ secrets.githubToken }}
       - name: Debug
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled }}
         timeout-minutes: 15
         uses: mxschmitt/action-tmate@v3
-        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled }}
+        with:
+          limit-access-to-actor: true
 
   nodeLint:
     name: 'Lint / node'
