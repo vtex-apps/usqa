@@ -1,6 +1,8 @@
 name: '[QE] Quality Engineering'
 
 on:
+  # Just to make easier debug typos
+  workflow_dispatch:
   # Allow this to be called by others
   workflow_call:
     inputs:
