@@ -46,6 +46,31 @@ on:
     branches: 
       - main
       - master
+
+jobs:
+  quality-engineering:
+    name: QE
+    uses: vtex-apps/usqa/.github/workflows/quality-engineering.yml@main
+    with:
+      danger: true
+      dangerRequireChangelog: false
+      nodeLint: true
+      nodeTest: true
+      nodeSonar: true
+      cypress: true
+    secrets:
+      githubToken: ${{ secrets.GITHUB_TOKEN }}
+      sonarToken: ${{ secrets.SONAR_TOKEN }}
+      cypressJson: ${{ secrets.VTEX_QE }}
+```
+
+## Using it on PULL REQUEST TARGET events
+Suggested file name: `.github/workflows/qe-pull-request-target.yml`
+
+```yaml
+name: '[PRT] Quality Engineering'
+
+on:
   pull_request_target:
     branches: 
       - main
