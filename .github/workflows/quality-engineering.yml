@@ -133,6 +133,33 @@ jobs:
         with:
           limit-access-to-actor: true
 
+  danger:
+    name: 'Danger'
+    if: ${{ inputs.danger }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [safeCheck]
+    steps:
+      - name: 'Trusted checkout'
+        uses: actions/checkout@v3
+        if: ( github.event.pull_request.head.repo.fork == false )
+      - name: 'Untrusted checkout'
+        uses: actions/checkout@v3
+        if: ( github.event.pull_request.head.repo.fork == true )
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - name: 'Set up NodeJS'
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: yarn
+      - name: 'Danger CI'
+        uses: vtex/danger@master
+        env:
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+          REQUIRE_CHANGELOG_VERSION: ${{ inputs.dangerRequireChanglog }}
+
   nodeLint:
     name: 'Lint / node'
     if: ${{ inputs.nodeLint }}
@@ -187,8 +214,8 @@ jobs:
         with:
           node-version: 16
           cache: yarn
-      - name: 'Not ready yet'
-        run: exit 0
+      - name: 'Run test on every builder directory'
+        uses: vtex/action-io-app-test@master
 
   nodeSonar:
     name: 'Sonar / node'
