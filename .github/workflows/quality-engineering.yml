@@ -164,7 +164,7 @@ jobs:
   # -----------------------------------------------------------------------------------------
   nodeLint:
     name: 'Lint / node'
-    if: ${{ inputs.nodeLint }}
+    if: ${{ inputs.nodeLint || inputs.nodeSonar || inputs.nodeTest}}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [safeCheck]
