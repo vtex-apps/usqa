@@ -28,6 +28,8 @@ jobs:
     uses: vtex-apps/usqa/.github/workflows/quality-engineering.yml@main
     with:
       nodeSonar: true
+      nodeSonarProjectKey: your-org_your-repo
+      nodeSonarOrganization: your-org
       nodeLint: true
       nodeTest: true
     secrets:
@@ -57,6 +59,8 @@ jobs:
       nodeLint: true
       nodeTest: true
       nodeSonar: true
+      nodeSonarProjectKey: your-org_your-repo
+      nodeSonarOrganization: your-org      
       cypress: true
     secrets:
       githubToken: ${{ secrets.GITHUB_TOKEN }}
@@ -88,6 +92,8 @@ jobs:
       nodeLint: true
       nodeTest: true
       nodeSonar: true
+      nodeSonarProjectKey: your-org_your-repo
+      nodeSonarOrganization: your-org      
       cypress: true
     secrets:
       githubToken: ${{ secrets.GITHUB_TOKEN }}
