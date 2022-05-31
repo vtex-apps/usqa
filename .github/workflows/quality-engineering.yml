@@ -99,11 +99,6 @@ on:
         description: 'A JSON to pass make Cy-Runner works'
         required: false
 
-# Let's avoid concurrency
-concurrency:
-  group: ${{ github.workflow }}
-  cancel-in-progress: false
-
 jobs:
   # check here if it is safe to run it on pull_request_target events
   safeCheck:
@@ -201,6 +196,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [nodeLint]
+    concurrency:
+      group: ${{ github.workflow }}
+      cancel-in-progress: false
     steps:
       - name: 'Trusted checkout'
         uses: actions/checkout@v3
@@ -254,6 +252,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [safeCheck]
+    concurrency:
+      group: ${{ github.workflow }}
+      cancel-in-progress: false
     steps:
       - name: 'Trusted checkout'
         uses: actions/checkout@v3
@@ -276,6 +277,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [safeCheck]
+    concurrency:
+      group: ${{ github.workflow }}
+      cancel-in-progress: false
     steps:
       - name: 'Trusted checkout'
         uses: actions/checkout@v3
