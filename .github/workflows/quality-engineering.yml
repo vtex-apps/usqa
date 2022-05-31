@@ -197,8 +197,7 @@ jobs:
     timeout-minutes: 5
     needs: [nodeLint]
     concurrency:
-      group: ${{ github.workflow }}
-      cancel-in-progress: false
+      group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
     steps:
       - name: 'Trusted checkout'
         uses: actions/checkout@v3
@@ -253,8 +252,7 @@ jobs:
     timeout-minutes: 5
     needs: [safeCheck]
     concurrency:
-      group: ${{ github.workflow }}
-      cancel-in-progress: false
+      group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
     steps:
       - name: 'Trusted checkout'
         uses: actions/checkout@v3
@@ -279,7 +277,6 @@ jobs:
     needs: [safeCheck]
     concurrency:
       group: ${{ github.workflow }}
-      cancel-in-progress: false
     steps:
       - name: 'Trusted checkout'
         uses: actions/checkout@v3
