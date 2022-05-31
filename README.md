@@ -27,7 +27,13 @@ jobs:
     name: QE
     uses: vtex-apps/usqa/.github/workflows/quality-engineering.yml@main
     with:
+      # As you pass your Sonar Project Key and Organization,
+      # you don't need sonar-project.properties file on root
       nodeSonar: true
+      nodeSonarProjectKey: your-org_your-repo
+      nodeSonarOrganization: your-org
+      # You can disable it setting to false or just
+      # by deleting the line (false is the default)
       nodeLint: true
       nodeTest: true
     secrets:
@@ -57,6 +63,8 @@ jobs:
       nodeLint: true
       nodeTest: true
       nodeSonar: true
+      nodeSonarProjectKey: your-org_your-repo
+      nodeSonarOrganization: your-org      
       cypress: true
     secrets:
       githubToken: ${{ secrets.GITHUB_TOKEN }}
@@ -88,6 +96,8 @@ jobs:
       nodeLint: true
       nodeTest: true
       nodeSonar: true
+      nodeSonarProjectKey: your-org_your-repo
+      nodeSonarOrganization: your-org      
       cypress: true
     secrets:
       githubToken: ${{ secrets.GITHUB_TOKEN }}
