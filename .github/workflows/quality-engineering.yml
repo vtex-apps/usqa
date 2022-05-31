@@ -123,7 +123,7 @@ jobs:
       - name: 'Create a file'
         run: sudo touch /mnt/charles
       - name: Debug
-        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
         timeout-minutes: 5
         uses: mxschmitt/action-tmate@v3
         with:
@@ -269,8 +269,8 @@ jobs:
           SONAR_TOKEN: ${{ secrets.sonarToken }}
         with:
           args: >
-            -Dsonar.projectKey=${{ github.event.inputs.nodeSonarProjectKey }}
-            -Dsonar.organization=${{ github.event.inputs.nodeSonarOrganization }}
+            -Dsonar.projectKey=${{ inputs.nodeSonarProjectKey }}
+            -Dsonar.organization=${{ inputs.nodeSonarOrganization }}
       - name: 'Untrusted SonarCloud Scan'
         if: ( github.event.pull_request.head.repo.fork == true )
         uses: SonarSource/sonarcloud-github-action@v1.6
@@ -279,8 +279,8 @@ jobs:
           SONAR_TOKEN: ${{ secrets.sonarToken }}
         with:
           args: >
-            -Dsonar.projectKey=${{ github.event.inputs.nodeSonarProjectKey }}
-            -Dsonar.organization=${{ github.event.inputs.nodeSonarOrganization }}
+            -Dsonar.projectKey=${{ inputs.nodeSonarProjectKey }}
+            -Dsonar.organization=${{ inputs.nodeSonarOrganization }}
             -Dsonar.pullrequest.key=${{ github.event.pull_request.number }} 
             -Dsonar.pullrequest.branch=${{ github.event.pull_request.head.ref }} 
             -Dsonar.scm.revision=${{ github.event.pull_request.head.sha }}
@@ -338,7 +338,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.sonarToken }}
         shell: powershell
         run: |
-          .\.sonar\scanner\dotnet-sonarscanner begin /k:"${{ github.event.inputs.dotnetSonarProjectKey }}" /o:"${{ github.event.inputs.dotnetSonarOrganization }}" /d:sonar.login="${{ secrets.sonarToken }}" /d:sonar.host.url="https://sonarcloud.io"
+          .\.sonar\scanner\dotnet-sonarscanner begin /k:"${{ inputs.dotnetSonarProjectKey }}" /o:"${{ inputs.dotnetSonarOrganization }}" /d:sonar.login="${{ secrets.sonarToken }}" /d:sonar.host.url="https://sonarcloud.io"
           dotnet clean
           dotnet build
           .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
