@@ -20,7 +20,7 @@ on:
         type: boolean
         default: false
         required: false
-      dangerRequireChanglog:
+      dangerRequireChangelog:
         description: 'Require changlog version for Danger?'
         type: boolean
         default: false
@@ -157,7 +157,7 @@ jobs:
         uses: vtex/danger@master
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
-          REQUIRE_CHANGELOG_VERSION: ${{ inputs.dangerRequireChanglog }}
+          REQUIRE_CHANGELOG_VERSION: ${{ inputs.dangerRequireChangelog }}
 
   # -----------------------------------------------------------------------------------------
   # Job to run Lint (node)
