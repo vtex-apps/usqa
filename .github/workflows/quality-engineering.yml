@@ -100,7 +100,9 @@ on:
         required: false
 
 jobs:
-  # check here if it is safe to run it on pull_request_target events
+  # -----------------------------------------------------------------------------------------
+  # Job to check here if it is safe to run it on pull_request_target events
+  # -----------------------------------------------------------------------------------------
   safeCheck:
     name: 'Security check'
     runs-on: ubuntu-latest
@@ -133,6 +135,9 @@ jobs:
         with:
           limit-access-to-actor: true
 
+  # -----------------------------------------------------------------------------------------
+  # Job to run Danger
+  # -----------------------------------------------------------------------------------------
   danger:
     name: 'Danger'
     if: ${{ inputs.danger }}
@@ -160,6 +165,9 @@ jobs:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
           REQUIRE_CHANGELOG_VERSION: ${{ inputs.dangerRequireChanglog }}
 
+  # -----------------------------------------------------------------------------------------
+  # Job to run Lint (node)
+  # -----------------------------------------------------------------------------------------
   nodeLint:
     name: 'Lint / node'
     if: ${{ inputs.nodeLint }}
@@ -194,6 +202,9 @@ jobs:
       - name: 'Run lint'
         run: yarn lint
 
+  # -----------------------------------------------------------------------------------------
+  # Job to run tests (node)
+  # -----------------------------------------------------------------------------------------
   nodeTest:
     name: 'Unit tests / node'
     if: ${{ inputs.nodeTest }}
@@ -217,6 +228,9 @@ jobs:
       - name: 'Run test on every builder directory'
         uses: vtex/action-io-app-test@master
 
+  # -----------------------------------------------------------------------------------------
+  # Job to run SonarCloud (node)
+  # -----------------------------------------------------------------------------------------
   nodeSonar:
     name: 'Sonar / node'
     if: ( inputs.nodeSonar ) && ( github.actor != 'dependabot[bot]' )
@@ -272,6 +286,9 @@ jobs:
             -Dsonar.pullrequest.branch=${{ github.event.pull_request.head.ref }} 
             -Dsonar.scm.revision=${{ github.event.pull_request.head.sha }}
 
+  # -----------------------------------------------------------------------------------------
+  # Job to run SonarCloud (.Net)
+  # -----------------------------------------------------------------------------------------
   dotnetSonar:
     name: 'Sonar / dotnet'
     if: ( inputs.dotnetSonar ) && ( github.actor != 'dependabot[bot]' )
@@ -296,6 +313,9 @@ jobs:
       - name: 'Not ready yet'
         run: echo 1
 
+  # -----------------------------------------------------------------------------------------
+  # Job to run Cypress
+  # -----------------------------------------------------------------------------------------
   cypress:
     name: 'Cypress'
     if: ( inputs.cypress ) && ( github.event.pull_request.draft == false )
