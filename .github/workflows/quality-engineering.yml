@@ -33,16 +33,10 @@ on:
         type: boolean
         default: false
         required: false
-      # Unit tests for NodeJS
       nodeTest:
         description: 'Run node unit tests?'
         type: boolean
         default: false
-        required: false
-      nodeTestCmd:
-        description: 'What is the JS command to run unit tests?'
-        type: string
-        default: yarn test --coverage
         required: false
       nodeSonar:
         description: 'Run node SonarCloud?'
@@ -87,7 +81,7 @@ on:
         required: false
     secrets:
       # -----------------------------------------------------------------------------------------
-      # Secretes for GitHub token, SonarCloud token and Cypress JSON
+      # Secrets for GitHub token, SonarCloud token and Cypress JSON
       # -----------------------------------------------------------------------------------------
       githubToken:
         description: 'A token to access GitHub staff'
@@ -273,6 +267,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
           SONAR_TOKEN: ${{ secrets.sonarToken }}
+        with:
+          args: >
+            -Dsonar.projectKey=${{ inputs.nodeSonarProjectKey }}
+            -Dsonar.organization=${{ inputs.nodeSonarOrganization }}
       - name: 'Untrusted SonarCloud Scan'
         if: ( github.event.pull_request.head.repo.fork == true )
         uses: SonarSource/sonarcloud-github-action@v1.6
@@ -280,8 +278,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
           SONAR_TOKEN: ${{ secrets.sonarToken }}
         with:
-          # SonarCloud doesn't treat pull_request_target, so we need this
           args: >
+            -Dsonar.projectKey=${{ inputs.nodeSonarProjectKey }}
+            -Dsonar.organization=${{ inputs.nodeSonarOrganization }}
             -Dsonar.pullrequest.key=${{ github.event.pull_request.number }} 
             -Dsonar.pullrequest.branch=${{ github.event.pull_request.head.ref }} 
             -Dsonar.scm.revision=${{ github.event.pull_request.head.sha }}
@@ -292,12 +291,16 @@ jobs:
   dotnetSonar:
     name: 'Sonar / dotnet'
     if: ( inputs.dotnetSonar ) && ( github.actor != 'dependabot[bot]' )
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+    runs-on: windows-latest
+    timeout-minutes: 10
     needs: [safeCheck]
     concurrency:
       group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
     steps:
+      - name: Set up JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.11
       - name: 'Trusted checkout'
         uses: actions/checkout@v3
         if: ( github.event.pull_request.head.repo.fork == false )
@@ -310,8 +313,35 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           fetch-depth: 0
-      - name: 'Not ready yet'
-        run: echo 1
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v1
+        with:
+          path: ~\sonar\cache
+          key: ${{ runner.os }}-sonar-vtex
+          restore-keys: ${{ runner.os }}-sonar-vtex
+      - name: Cache SonarCloud scanner
+        id: cache-sonar-scanner
+        uses: actions/cache@v1
+        with:
+          path: .\.sonar\scanner
+          key: ${{ runner.os }}-sonar-scanner-vtex
+          restore-keys: ${{ runner.os }}-sonar-scanner-vtex
+      - name: Install SonarCloud scanner
+        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+        shell: powershell
+        run: |
+          New-Item -Path .\.sonar\scanner -ItemType Directory
+          dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
+      - name: Build and analyze
+        env:
+          GITHUB_TOKEN: ${{ secrets.githubToken }}
+          SONAR_TOKEN: ${{ secrets.sonarToken }}
+        shell: powershell
+        run: |
+          .\.sonar\scanner\dotnet-sonarscanner begin /k:"${{ inputs.dotnetSonarProjectKey }}" /o:"${{ inputs.dotnetSonarOrganization }}" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
+          dotnet clean
+          dotnet build
+          .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
 
   # -----------------------------------------------------------------------------------------
   # Job to run Cypress
