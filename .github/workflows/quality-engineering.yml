@@ -101,6 +101,8 @@ jobs:
     name: 'Security check'
     runs-on: ubuntu-latest
     timeout-minutes: 1
+    outputs:
+      substantialChanges: ${{ steps.changed-files.outputs.only_changed }}
     steps:
       - name: 'Stop if from out side without the label "safe to test"'
         if: >-
@@ -131,9 +133,6 @@ jobs:
             CHANGELOG.md
             docs/**
             .github/**
-      - name: Run step if any of the listed files above change
-        if: steps.changed-files.outputs.only_changed == 'true'
-        run: echo "Just the documentation was changed."
       - name: Debug
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
         timeout-minutes: 5
@@ -151,6 +150,8 @@ jobs:
     timeout-minutes: 5
     needs: [safeCheck]
     steps:
+      - name: 'Check changed files'
+        run: echo ${{ needs.safeCheck.outputs.substantialChanges }}
       - name: 'Trusted checkout'
         uses: actions/checkout@v3
         if: ( github.event.pull_request.head.repo.fork == false )
