@@ -150,8 +150,6 @@ jobs:
     timeout-minutes: 5
     needs: [safeCheck]
     steps:
-      - name: 'Check changed files'
-        run: echo ${{ needs.safeCheck.outputs.substantialChanges }}
       - name: 'Trusted checkout'
         uses: actions/checkout@v3
         if: ( github.event.pull_request.head.repo.fork == false )
@@ -192,11 +190,13 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
       - name: 'Set up NodeJS'
+        if: ${{ needs.safeCheck.outputs.substantialChanges }}
         uses: actions/setup-node@v3
         with:
           node-version: 16
           cache: yarn
       - name: 'Install packages'
+        if: ${{ needs.safeCheck.outputs.substantialChanges }}
         run: |
           PWD=$(pwd)
           for DIR in '.' 'node' 'react'; do
@@ -207,6 +207,7 @@ jobs:
             fi
           done
       - name: 'Run lint'
+        if: ${{ needs.safeCheck.outputs.substantialChanges }}
         run: yarn lint
 
   # -----------------------------------------------------------------------------------------
@@ -376,17 +377,20 @@ jobs:
         uses: actions/checkout@v3
         if: ( github.event.pull_request.head.repo.fork == true )
       - name: 'Checkout Cy-Runner'
+        if: ${{ needs.safeCheck.outputs.substantialChanges }}
         uses: actions/checkout@v3
         with:
           repository: vtex-apps/cy-runner
           ref: main
           path: cy-runner
       - name: 'Set up NodeJS'
+        if: ${{ needs.safeCheck.outputs.substantialChanges }}
         uses: actions/setup-node@v3
         with:
           node-version: 16
           cache: yarn
       - name: 'Install packages'
+        if: ${{ needs.safeCheck.outputs.substantialChanges }}
         run: |
           PWD=$(pwd)
           for DIR in '.' 'node' 'react'; do
@@ -397,12 +401,14 @@ jobs:
             fi
           done
       - name: 'Install Cy-Runner'
+        if: ${{ needs.safeCheck.outputs.substantialChanges }}
         run: |
           yarn install --frozen-lockfile 
           rm -rf .git
           yarn cypress info
         working-directory: cy-runner
       - name: 'Run Cy-Runner'
+        if: ${{ needs.safeCheck.outputs.substantialChanges }}
         run: yarn cy-r
         env:
           VTEX_QE: ${{ secrets.cypressJSON }}
