@@ -121,8 +121,18 @@ jobs:
         with:
           labels: safe to test
           GITHUB_TOKEN: ${{ secrets.githubToken }}
-      - name: 'Create a file'
-        run: sudo touch /mnt/charles
+      - name: 'Checkout'
+        uses: actions/checkout@v3
+      - name: 'Get changed files'
+        id: changed-files
+        uses: tj-actions/changed-files@v22.2
+        with:
+          files_ignore: |
+            CHANGELOG.md
+            docs/**
+      - name: Run step if any of the listed files above change
+        if: steps.changed-files.outputs.only_changed == 'true'
+        run: echo "Just the documentation was changed."
       - name: Debug
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
         timeout-minutes: 5
