@@ -123,8 +123,18 @@ jobs:
         with:
           labels: safe to test
           GITHUB_TOKEN: ${{ secrets.githubToken }}
-      - name: 'Checkout'
+      - name: 'Trusted checkout'
         uses: actions/checkout@v3
+        if: ( github.event.pull_request.head.repo.fork == false )
+        with:
+          fetch-depth: 0
+      - name: 'Untrusted checkout'
+        uses: actions/checkout@v3
+        if: ( github.event.pull_request.head.repo.fork == true )
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          fetch-depth: 0
       - name: 'Get changed files'
         id: changed-files
         uses: tj-actions/changed-files@v22.2
