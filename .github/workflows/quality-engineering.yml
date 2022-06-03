@@ -143,10 +143,8 @@ jobs:
             CHANGELOG.md
             docs/**
             .github/**
-      - name: 'We have substantial changes?'
-        run: | 
-          echo ${{ steps.changed-files.outputs.only_changed }}
-          echo ( steps.changed-files.outputs.only_changed )
+      - name: 'Do we have substantial changes?'
+        run: echo ${{ steps.changed-files.outputs.only_changed }}
       - name: Debug
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
         timeout-minutes: 5
