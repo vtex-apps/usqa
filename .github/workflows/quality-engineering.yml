@@ -202,13 +202,13 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
       - name: 'Set up NodeJS'
-        if: ${{ needs.safeCheck.outputs.substantialChanges }}
+        if: ( needs.safeCheck.outputs.substantialChanges == true )
         uses: actions/setup-node@v3
         with:
           node-version: 16
           cache: yarn
       - name: 'Install packages'
-        if: ${{ needs.safeCheck.outputs.substantialChanges }}
+        if: ( needs.safeCheck.outputs.substantialChanges == true )
         run: |
           PWD=$(pwd)
           for DIR in '.' 'node' 'react'; do
@@ -219,7 +219,7 @@ jobs:
             fi
           done
       - name: 'Run lint'
-        if: ${{ needs.safeCheck.outputs.substantialChanges }}
+        if: ( needs.safeCheck.outputs.substantialChanges == true )
         run: yarn lint
 
   # -----------------------------------------------------------------------------------------
