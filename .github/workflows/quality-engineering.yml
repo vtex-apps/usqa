@@ -139,6 +139,8 @@ jobs:
         id: changed-files
         uses: tj-actions/changed-files@v22.2
         with:
+          files: |
+            **/**
           files_ignore: |
             CHANGELOG.md
             docs/**
