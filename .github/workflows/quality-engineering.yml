@@ -217,7 +217,7 @@ jobs:
               yarn install --frozen-lockfile
               cd -
             fi
-          done        
+          done
       - name: 'Run lint'
         if: ( needs.safeCheck.outputs.substantialChanges == true ) || ( github.event_name == 'push' )
         run: yarn lint
@@ -287,7 +287,7 @@ jobs:
               yarn install --frozen-lockfile
               cd -
             fi
-          done        
+          done
       - name: 'Trusted SonarCloud Scan'
         if: ( github.event.pull_request.head.repo.fork == false )
         uses: SonarSource/sonarcloud-github-action@v1.6
@@ -411,7 +411,7 @@ jobs:
               yarn install --frozen-lockfile
               cd -
             fi
-          done        
+          done
       - name: 'Install Cy-Runner'
         if: ( needs.safeCheck.outputs.substantialChanges == true ) || ( github.event_name == 'schedule' )
         run: |
