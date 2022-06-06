@@ -210,14 +210,14 @@ jobs:
       - name: 'Install packages'
         if: ( needs.safeCheck.outputs.substantialChanges == true ) || ( github.event_name == 'push' )
         run: |
-          PWD=$(pwd)
           for DIR in '.' 'node' 'react'; do
             if [[ -f "$DIR/package.json" ]]; then
-              echo "Installing $DIR packages..."
-              cd "$PWD/$DIR"
+              echo -e "\nInstalling $DIR packages...\n"
+              cd "$DIR"
               yarn install --frozen-lockfile
+              cd -
             fi
-          done
+          done        
       - name: 'Run lint'
         if: ( needs.safeCheck.outputs.substantialChanges == true ) || ( github.event_name == 'push' )
         run: yarn lint
@@ -280,14 +280,14 @@ jobs:
           cache: yarn
       - name: 'Install packages'
         run: |
-          PWD=$(pwd)
           for DIR in '.' 'node' 'react'; do
             if [[ -f "$DIR/package.json" ]]; then
-              echo "Installing $DIR packages..."
-              cd "$PWD/$DIR"
+              echo -e "\nInstalling $DIR packages...\n"
+              cd "$DIR"
               yarn install --frozen-lockfile
+              cd -
             fi
-          done
+          done        
       - name: 'Trusted SonarCloud Scan'
         if: ( github.event.pull_request.head.repo.fork == false )
         uses: SonarSource/sonarcloud-github-action@v1.6
@@ -404,14 +404,14 @@ jobs:
       - name: 'Install packages'
         if: ( needs.safeCheck.outputs.substantialChanges == true ) || ( github.event_name == 'schedule' )
         run: |
-          PWD=$(pwd)
           for DIR in '.' 'node' 'react'; do
             if [[ -f "$DIR/package.json" ]]; then
-              echo "Installing $DIR packages..."
-              cd "$PWD/$DIR"
+              echo -e "\nInstalling $DIR packages...\n"
+              cd "$DIR"
               yarn install --frozen-lockfile
+              cd -
             fi
-          done
+          done        
       - name: 'Install Cy-Runner'
         if: ( needs.safeCheck.outputs.substantialChanges == true ) || ( github.event_name == 'schedule' )
         run: |
