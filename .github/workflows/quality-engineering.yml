@@ -210,12 +210,12 @@ jobs:
       - name: 'Install packages'
         if: ( needs.safeCheck.outputs.substantialChanges == true ) || ( github.event_name == 'push' )
         run: |
-          PWD=$(pwd)
           for DIR in '.' 'node' 'react'; do
             if [[ -f "$DIR/package.json" ]]; then
-              echo "Installing $DIR packages..."
-              cd "$PWD/$DIR"
+              echo -e "\nInstalling $DIR packages...\n"
+              cd "$DIR"
               yarn install --frozen-lockfile
+              cd -
             fi
           done
       - name: 'Run lint'
@@ -280,12 +280,12 @@ jobs:
           cache: yarn
       - name: 'Install packages'
         run: |
-          PWD=$(pwd)
           for DIR in '.' 'node' 'react'; do
             if [[ -f "$DIR/package.json" ]]; then
-              echo "Installing $DIR packages..."
-              cd "$PWD/$DIR"
+              echo -e "\nInstalling $DIR packages...\n"
+              cd "$DIR"
               yarn install --frozen-lockfile
+              cd -
             fi
           done
       - name: 'Trusted SonarCloud Scan'
@@ -404,12 +404,12 @@ jobs:
       - name: 'Install packages'
         if: ( needs.safeCheck.outputs.substantialChanges == true ) || ( github.event_name == 'schedule' )
         run: |
-          PWD=$(pwd)
           for DIR in '.' 'node' 'react'; do
             if [[ -f "$DIR/package.json" ]]; then
-              echo "Installing $DIR packages..."
-              cd "$PWD/$DIR"
+              echo -e "\nInstalling $DIR packages...\n"
+              cd "$DIR"
               yarn install --frozen-lockfile
+              cd -
             fi
           done
       - name: 'Install Cy-Runner'
