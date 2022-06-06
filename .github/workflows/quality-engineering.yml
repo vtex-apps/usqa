@@ -102,7 +102,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 1
     outputs:
-      substantialChanges: ${{ steps.changed-files.outputs.other_modified_files }}
+      substantialChanges: ${{ steps.changed-files.outputs.only_modified }}
     steps:
       - name: 'Stop if from out side without the label "safe to test"'
         if: >-
@@ -139,12 +139,12 @@ jobs:
         id: changed-files
         uses: tj-actions/changed-files@v22.2
         with:
-          files: |
+          files_ignore: |
             CHANGELOG.md
             docs/**
             .github/**
       - name: 'Do we have substantial changes?'
-        run: echo ${{ steps.changed-files.outputs.other_modified_files }}
+        run: echo ${{ steps.changed-files.outputs.only_modified }}
       - name: Debug
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
         timeout-minutes: 5
