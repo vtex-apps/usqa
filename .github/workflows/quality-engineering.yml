@@ -365,12 +365,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
           SONAR_TOKEN: ${{ secrets.sonarToken }}
+          PROJECT: ${{ inputs.dotnetSonarProjectKey }}
+          ORG: ${{ inputs.dotnetSonarOrganization }}
+          HOST: "https://sonarcloud.io"
         shell: powershell
         run: |
-          .\.sonar\scanner\dotnet-sonarscanner begin /k:"${{ inputs.dotnetSonarProjectKey }}" /o:"${{ inputs.dotnetSonarOrganization }}" /d:sonar.login="${{ secrets.sonarToken }}" /d:sonar.host.url="https://sonarcloud.io"
+          .\.sonar\scanner\dotnet-sonarscanner begin /k:"${{ PROJECT }}" /o:"${{ ORG }}" /d:sonar.login="${{ SONAR_TOKEN }}" /d:sonar.host.url="${{ HOST }}"
           dotnet clean
           dotnet build
-          .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+          .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.login="${{ SONAR_TOKEN }}"
 
   # -----------------------------------------------------------------------------------------
   # Job to run Cypress
