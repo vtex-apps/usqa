@@ -205,14 +205,14 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
       - name: 'Set up NodeJS'
-        if: ( needs.safeCheck.outputs.substantialChanges == true ) || ( github.event_name == 'push' )
+        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'push' )
         uses: actions/setup-node@v3
         with:
           node-version: 16
           cache: yarn
         continue-on-error: true
       - name: 'Install packages'
-        if: ( needs.safeCheck.outputs.substantialChanges == true ) || ( github.event_name == 'push' )
+        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'push' )
         run: |
           for DIR in '.' 'node' 'react'; do
             if [[ -f "$DIR/package.json" ]]; then
@@ -223,7 +223,7 @@ jobs:
             fi
           done
       - name: 'Run lint'
-        if: ( needs.safeCheck.outputs.substantialChanges == true ) || ( github.event_name == 'push' )
+        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'push' )
         run: yarn lint
 
   # -----------------------------------------------------------------------------------------
