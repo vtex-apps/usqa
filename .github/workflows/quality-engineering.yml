@@ -178,6 +178,7 @@ jobs:
         with:
           node-version: 16
           cache: yarn
+        continue-on-error: true
       - name: 'Danger CI'
         uses: vtex/danger@master
         env:
@@ -209,6 +210,7 @@ jobs:
         with:
           node-version: 16
           cache: yarn
+        continue-on-error: true
       - name: 'Install packages'
         if: ( needs.safeCheck.outputs.substantialChanges == true ) || ( github.event_name == 'push' )
         run: |
@@ -248,6 +250,7 @@ jobs:
         with:
           node-version: 16
           cache: yarn
+        continue-on-error: true
       - name: 'Run test on every builder directory'
         uses: vtex/action-io-app-test@master
 
@@ -280,6 +283,7 @@ jobs:
         with:
           node-version: 16
           cache: yarn
+        continue-on-error: true
       - name: 'Install packages'
         run: |
           for DIR in '.' 'node' 'react'; do
@@ -403,6 +407,7 @@ jobs:
         with:
           node-version: 16
           cache: yarn
+        continue-on-error: true
       - name: 'Install packages'
         if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'schedule' )
         run: |
