@@ -384,7 +384,7 @@ jobs:
     if: ( inputs.cypress ) && ( github.event.pull_request.draft == false )
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: [safeCheck]
+    needs: [nodeLint]
     concurrency:
       group: ${{ github.workflow }}
     steps:
