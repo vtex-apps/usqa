@@ -401,21 +401,21 @@ jobs:
         uses: actions/checkout@v3
         if: ( github.event.pull_request.head.repo.fork == true )
       - name: 'Checkout Cy-Runner'
-        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'schedule' )
+        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'schedule' ) || ( github.event_name == 'workflow_dispatch' )
         uses: actions/checkout@v3
         with:
           repository: vtex-apps/cy-runner
           ref: ${{ inputs.cyRunnerBranch }}
           path: cy-runner
       - name: 'Set up NodeJS'
-        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'schedule' )
+        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'schedule' ) || ( github.event_name == 'workflow_dispatch' )
         uses: actions/setup-node@v3
         with:
           node-version: 16
           cache: yarn
         continue-on-error: true
       - name: 'Install packages'
-        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'schedule' )
+        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'schedule' ) || ( github.event_name == 'workflow_dispatch' )
         run: |
           for DIR in '.' 'node' 'react'; do
             if [[ -f "$DIR/package.json" ]]; then
@@ -426,14 +426,14 @@ jobs:
             fi
           done
       - name: 'Install Cy-Runner'
-        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'schedule' )
+        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'schedule' ) || ( github.event_name == 'workflow_dispatch' )
         run: |
           yarn install --frozen-lockfile 
           rm -rf .git
           yarn cypress info
         working-directory: cy-runner
       - name: 'Run Cy-Runner'
-        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'schedule' )
+        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'schedule' ) || ( github.event_name == 'workflow_dispatch' )
         run: yarn cy-r
         env:
           VTEX_QE: ${{ secrets.cypressJSON }}
