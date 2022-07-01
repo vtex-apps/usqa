@@ -61,6 +61,11 @@ on:
         type: boolean
         default: false
         required: false
+      dotnetTest:
+        description: 'Run .Net unit tests?'
+        type: boolean
+        default: false
+        required: false        
       dotnetVersion:
         description: 'What is the .Net version?'
         type: string
