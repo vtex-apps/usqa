@@ -279,7 +279,7 @@ jobs:
   # Job to run SonarCloud (Node.js)
   # -----------------------------------------------------------------------------------------
   nodeSonar:
-    name: 'Sonar / Node.js'
+    name: 'SonarCloud / Node.js'
     if: ( inputs.nodeSonar ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -408,7 +408,7 @@ jobs:
   # Job to run SonarCloud (.Net)
   # -----------------------------------------------------------------------------------------
   dotnetSonar:
-    name: 'Sonar / .Net'
+    name: 'SonarCloud / .Net'
     if: ( inputs.dotnetSonar ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
     runs-on: windows-latest
     timeout-minutes: 10
