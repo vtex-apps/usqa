@@ -210,7 +210,7 @@ jobs:
   # Job to run Lint (Node.js)
   # -----------------------------------------------------------------------------------------
   nodeLint:
-    name: 'Lint / Node.js'
+    name: 'Node.js / Lint'
     if: ${{ inputs.nodeLint || inputs.nodeSonar || inputs.nodeTest}}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -251,7 +251,7 @@ jobs:
   # Job to run tests (Node.js)
   # -----------------------------------------------------------------------------------------
   nodeTest:
-    name: 'Unit test / Node.js'
+    name: 'Node.js / Unit test'
     if: ${{ inputs.nodeTest }}
     runs-on: ubuntu-latest
     needs: [safeCheck]
@@ -279,7 +279,7 @@ jobs:
   # Job to run SonarCloud (Node.js)
   # -----------------------------------------------------------------------------------------
   nodeSonar:
-    name: 'SonarCloud / Node.js'
+    name: 'Node.js / SonarCloud'
     if: ( inputs.nodeSonar ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -344,7 +344,7 @@ jobs:
   # Job to run Lint (.Net)
   # -----------------------------------------------------------------------------------------
   dotnetLint:
-    name: 'Lint / .Net'
+    name: '.Net / Lint'
     if: ( inputs.dotnetLint ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -375,7 +375,7 @@ jobs:
   # Job to run Tests (.Net)
   # -----------------------------------------------------------------------------------------
   dotnetTest:
-    name: 'Unit test / .Net'
+    name: '.Net / Unit test'
     if: ( inputs.dotnetTest ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -408,7 +408,7 @@ jobs:
   # Job to run SonarCloud (.Net)
   # -----------------------------------------------------------------------------------------
   dotnetSonar:
-    name: 'SonarCloud / .Net'
+    name: '.Net / SonarCloud'
     if: ( inputs.dotnetSonar ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
     runs-on: windows-latest
     timeout-minutes: 10
