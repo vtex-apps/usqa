@@ -265,7 +265,7 @@ jobs:
   # -----------------------------------------------------------------------------------------
   nodeSonar:
     name: 'Sonar / node'
-    if: ( inputs.nodeSonar ) && ( github.actor != 'dependabot[bot]' )
+    if: ( inputs.nodeSonar ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [nodeLint]
@@ -329,7 +329,7 @@ jobs:
   # -----------------------------------------------------------------------------------------
   dotnetSonar:
     name: 'Sonar / dotnet'
-    if: ( inputs.dotnetSonar ) && ( github.actor != 'dependabot[bot]' )
+    if: ( inputs.dotnetSonar ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
     runs-on: windows-latest
     timeout-minutes: 10
     needs: [safeCheck]
