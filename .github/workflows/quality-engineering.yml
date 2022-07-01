@@ -283,7 +283,7 @@ jobs:
     if: ( inputs.nodeSonar ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [safeCheck, nodeLint, nodeTest]
+    needs: [nodeLint, nodeTest]
     concurrency:
       group: nodeSonar-${{ github.actor }}
     steps:
@@ -412,7 +412,7 @@ jobs:
     if: ( inputs.dotnetSonar ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
     runs-on: windows-latest
     timeout-minutes: 10
-    needs: [safeCheck, dotnetLint, dotnetTest]
+    needs: [dotnetLint, dotnetTest]
     concurrency:
       group: dotnetSonar-${{ github.actor }}
     steps:
