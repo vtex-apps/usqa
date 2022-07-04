@@ -13,14 +13,6 @@ on:
     branches: 
       - master
       - main
-      - bugfix/*
-      - chore/*
-      - enhancement/*
-      - feature/*
-      - fix/*
-      - hotfix/*
-      - translation/*
-      - actions/*
 
 jobs:
   quality-engineering:
@@ -66,6 +58,7 @@ jobs:
       nodeSonarProjectKey: your-org_your-repo
       nodeSonarOrganization: your-org      
       cypress: true
+      cypressTimeOut: 15  # In minutes
     secrets:
       githubToken: ${{ secrets.GITHUB_TOKEN }}
       sonarToken: ${{ secrets.SONAR_TOKEN }}
