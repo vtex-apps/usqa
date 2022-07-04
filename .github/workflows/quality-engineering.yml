@@ -80,12 +80,12 @@ on:
         default: false
         required: false
       cyRunnerBranch:
-        description: 'Run witch Cypress Runner branch?'
+        description: 'Witch branch use in Cypress-Runner?'
         type: string
         default: 'main'
         required: false
       cyRunnerTimeOut:
-        description: 'What is the time out for the Cypress job?'
+        description: 'What is the time out for the Cypress-Runner job?'
         type: number
         default: 30
         required: false
