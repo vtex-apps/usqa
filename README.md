@@ -58,7 +58,7 @@ jobs:
       nodeSonarProjectKey: your-org_your-repo
       nodeSonarOrganization: your-org      
       cypress: true
-      cypressTimeOut: 15  # In minutes
+      cyRunnerTimeOut: 15  # In minutes
     secrets:
       githubToken: ${{ secrets.GITHUB_TOKEN }}
       sonarToken: ${{ secrets.SONAR_TOKEN }}
