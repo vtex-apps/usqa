@@ -326,12 +326,11 @@ jobs:
       - name: 'Process SonarCloud task id'
         working-directory: .scannerwork
         run: |
-          TASK_URL=$(grep -oP 'ceTaskUrl=\K(.*)' report-task.txt)
+          TASK_URL=$(sed -nr 's/ceTaskUrl=(.*)/\1/p' report-task.txt)
           RESULT=$(curl -s -u $SONAR_TOKEN: $TASK_URL)
-          echo $TASK_URL
-          echo $RESULT
-          echo $RESULT.task.status
-          echo fromJSON($RESULT.task.status)
+          STATUS = fromJSON(${{ RESULT }})
+          echo $STATUS.task.status
+          echo STATUS.task.status
         env:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
           SONAR_TOKEN: ${{ secrets.sonarToken }}
