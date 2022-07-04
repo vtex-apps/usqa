@@ -325,9 +325,10 @@ jobs:
             -Dsonar.scm.revision=${{ github.event.pull_request.head.sha }}
       - name: 'Process SonarCloud task id'
         run: |
-          ls -lah
-          ls -lah .scannerwork/*
-          cat .scannerwork/*
+          TASK_URL=$(grep -oP 'ceTaskUrl=\K(.*)' teste)
+          RESULT=$(curl -s -u $SONAR_TOKEN: $TASK_URL)
+          echo $RESULT
+          echo RESULT.task.status
         env:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
           SONAR_TOKEN: ${{ secrets.sonarToken }}
