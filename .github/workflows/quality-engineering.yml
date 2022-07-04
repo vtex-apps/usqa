@@ -327,18 +327,30 @@ jobs:
         working-directory: .scannerwork
         run: |
           TASK_URL=$(sed -nr 's/ceTaskUrl=(.*)/\1/p' report-task.txt)
-          STATUS="FAILURE"
+          STATUS='FAILURE'
           MAX_TRY=3
           TRY=1
-          while [[ STATUS == "FAILURE" && $TRY -le $MAX_TRY ]]; do
-            echo -e "Trying to get results from SonarCloud ($TRY of $MAX_TRY)... "
-            sleep 5
+          while [[ $STATUS == 'FAILURE' && $TRY -le $MAX_TRY ]]; do
+            echo -n "Trying to get status from SonarCloud ($TRY of $MAX_TRY)... ";
+            sleep 3
             STATUS=$(curl -s -u $SONAR_TOKEN: $TASK_URL | jq .task.status | sed s/\"//g)
             echo "$STATUS."
             TRY=$(( $TRY + 1 ))
           done
+          ANALISYS_ID='ERROR'
           if [[ $STATUS == 'SUCCESS' ]]; then
-            exit 0
+            echo -n "Trying to get analysis ID from SonarCloud... ";
+            ANALISYS_ID=$(curl -s -u $SONAR_TOKEN: $TASK_URL | jq -r .task.analysisId)
+            echo "$ANALISYS_ID."
+            echo -n "Checking Quality Gate info... "
+            GATE_API='https://sonarcloud.io/api/qualitygates'
+            GATE_STATUS=$(curl -s -u $SONAR_TOKEN: "$GATE_API/project_status?analysisId=${ANALISYS_ID}" | jq -r .projectStatus.status)
+            echo "$GATE_STATUS."
+            if [[ $GATE_STATUS == 'OK' ]]; then 
+              exit 0
+            else
+              exit 1
+            fi
           else 
             exit 1
           fi
