@@ -323,6 +323,14 @@ jobs:
             -Dsonar.pullrequest.key=${{ github.event.pull_request.number }} 
             -Dsonar.pullrequest.branch=${{ github.event.pull_request.head.ref }} 
             -Dsonar.scm.revision=${{ github.event.pull_request.head.sha }}
+      - name: 'Process SonarCloud task id'
+        run: |
+          ls -lah
+          ls -lah .scannerwork/*
+          cat .scannerwork/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.githubToken }}
+          SONAR_TOKEN: ${{ secrets.sonarToken }}
 
   # -----------------------------------------------------------------------------------------
   # Job to run SonarCloud (.Net)
