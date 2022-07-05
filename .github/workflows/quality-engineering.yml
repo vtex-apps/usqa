@@ -338,6 +338,43 @@ jobs:
             -Dsonar.pullrequest.key=${{ github.event.pull_request.number }} 
             -Dsonar.pullrequest.branch=${{ github.event.pull_request.head.ref }} 
             -Dsonar.scm.revision=${{ github.event.pull_request.head.sha }}
+      - name: 'Process SonarCloud results'
+        working-directory: .scannerwork
+        run: |
+          TASK_URL=$(sed -nr 's/ceTaskUrl=(.*)/\1/p' report-task.txt)
+          STATUS='FAILURE'
+          MAX_TRY=3
+          TRY=1
+          while [[ $STATUS != 'SUCCESS' && $TRY -le $MAX_TRY ]]; do
+            echo -n "Trying to get status from SonarCloud ($TRY of $MAX_TRY)... "
+            sleep 5
+            STATUS=$(curl -s -u $SONAR_TOKEN: $TASK_URL | jq .task.status | sed s/\"//g)
+            echo "$STATUS."
+            TRY=$(( $TRY + 1 ))
+          done
+          if [[ $STATUS == 'SUCCESS' ]]; then
+            ANALISYS_ID='ERROR'
+            echo -n "Trying to get analysis ID from SonarCloud... "
+            sleep 5
+            ANALISYS_ID=$(curl -s -u $SONAR_TOKEN: $TASK_URL | jq -r .task.analysisId)
+            echo "$ANALISYS_ID."
+            echo -n "Checking Quality Gate info... "
+            GATE_API='https://sonarcloud.io/api/qualitygates'
+            GATE_STATUS=$(curl -s -u $SONAR_TOKEN: "$GATE_API/project_status?analysisId=${ANALISYS_ID}" | jq -r .projectStatus.status)
+            echo "$GATE_STATUS."
+            if [[ $GATE_STATUS == 'OK' ]]; then 
+              exit 0
+            else
+              echo 'The quality gate failed. Please, review the reasons on SonarCloud!'
+              exit 1
+            fi
+          else 
+            echo 'The analisys failed. Please, review your settings and sonar token!'
+            exit 1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.githubToken }}
+          SONAR_TOKEN: ${{ secrets.sonarToken }}
 
 
   # -----------------------------------------------------------------------------------------
