@@ -34,40 +34,55 @@ on:
         default: false
         required: false
       nodeTest:
-        description: 'Run node unit tests?'
+        description: 'Run Node.js unit tests?'
         type: boolean
         default: false
         required: false
       nodeSonar:
-        description: 'Run node SonarCloud?'
+        description: 'Run Node.js SonarCloud?'
         type: boolean
         default: false
         required: false
       nodeSonarProjectKey:
-        description: 'What is the SonarCloud project for Node?'
+        description: 'What is the SonarCloud project for Node.js?'
         type: string
         default: none
         required: false
       nodeSonarOrganization:
-        description: 'What is the SonarCloud Organization for Node?'
+        description: 'What is the SonarCloud Organization for Node.js?'
         type: string
         default: none
         required: false
       # -----------------------------------------------------------------------------------------
       # dotNet Section [Sonar]
       # -----------------------------------------------------------------------------------------
+      dotnetLint:
+        description: 'Run .Net Lint?'
+        type: boolean
+        default: false
+        required: false
+      dotnetTest:
+        description: 'Run .Net unit tests?'
+        type: boolean
+        default: false
+        required: false        
+      dotnetVersion:
+        description: 'What is the .Net version?'
+        type: string
+        default: '3.0'
+        required: false
       dotnetSonar:
-        description: 'Run SonarCloud for dotNet?'
+        description: 'Run SonarCloud for .Net?'
         type: boolean
         default: false
         required: false
       dotnetSonarProjectKey:
-        description: 'What is the SonarCloud project for dotnet?'
+        description: 'What is the SonarCloud project for .Net?'
         type: string
         default: none
         required: false
       dotnetSonarOrganization:
-        description: 'What is the SonarCloud Organization for dotnet?'
+        description: 'What is the SonarCloud Organization for .Net?'
         type: string
         default: none
         required: false
@@ -197,10 +212,10 @@ jobs:
           REQUIRE_CHANGELOG_VERSION: ${{ inputs.dangerRequireChangelog }}
 
   # -----------------------------------------------------------------------------------------
-  # Job to run Lint (node)
+  # Job to run Lint (Node.js)
   # -----------------------------------------------------------------------------------------
   nodeLint:
-    name: 'Lint / node'
+    name: 'Node.js / Lint'
     if: ${{ inputs.nodeLint || inputs.nodeSonar || inputs.nodeTest}}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -215,7 +230,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
-      - name: 'Set up NodeJS'
+      - name: 'Set up Node.js'
         if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'push' )
         uses: actions/setup-node@v3
         with:
@@ -238,13 +253,13 @@ jobs:
         run: yarn lint
 
   # -----------------------------------------------------------------------------------------
-  # Job to run tests (node)
+  # Job to run tests (Node.js)
   # -----------------------------------------------------------------------------------------
   nodeTest:
-    name: 'Unit tests / node'
+    name: 'Node.js / Unit test'
     if: ${{ inputs.nodeTest }}
     runs-on: ubuntu-latest
-    needs: [nodeLint]
+    needs: [safeCheck]
     timeout-minutes: 5
     steps:
       - name: 'Trusted checkout'
@@ -256,7 +271,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
-      - name: 'Set up NodeJS'
+      - name: 'Set up Node.js'
         uses: actions/setup-node@v3
         with:
           node-version: 16
@@ -266,14 +281,14 @@ jobs:
         uses: vtex/action-io-app-test@master
 
   # -----------------------------------------------------------------------------------------
-  # Job to run SonarCloud (node)
+  # Job to run SonarCloud (Node.js)
   # -----------------------------------------------------------------------------------------
   nodeSonar:
-    name: 'Sonar / node'
+    name: 'Node.js / SonarCloud'
     if: ( inputs.nodeSonar ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [nodeLint]
+    needs: [nodeLint, nodeTest]
     concurrency:
       group: nodeSonar-${{ github.actor }}
     steps:
@@ -289,7 +304,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           fetch-depth: 0
-      - name: 'Set up NodeJS'
+      - name: 'Set up Node.js'
         uses: actions/setup-node@v3
         with:
           node-version: 16
@@ -328,16 +343,118 @@ jobs:
             -Dsonar.pullrequest.key=${{ github.event.pull_request.number }} 
             -Dsonar.pullrequest.branch=${{ github.event.pull_request.head.ref }} 
             -Dsonar.scm.revision=${{ github.event.pull_request.head.sha }}
+      - name: 'Process SonarCloud results'
+        working-directory: .scannerwork
+        run: |
+          TASK_URL=$(sed -nr 's/ceTaskUrl=(.*)/\1/p' report-task.txt)
+          STATUS='FAILURE'
+          MAX_TRY=3
+          TRY=1
+          while [[ $STATUS != 'SUCCESS' && $TRY -le $MAX_TRY ]]; do
+            echo -n "Trying to get status from SonarCloud ($TRY of $MAX_TRY)... "
+            sleep 5
+            STATUS=$(curl -s -u $SONAR_TOKEN: $TASK_URL | jq .task.status | sed s/\"//g)
+            echo "$STATUS."
+            TRY=$(( $TRY + 1 ))
+          done
+          if [[ $STATUS == 'SUCCESS' ]]; then
+            ANALISYS_ID='ERROR'
+            echo -n "Trying to get analysis ID from SonarCloud... "
+            sleep 5
+            ANALISYS_ID=$(curl -s -u $SONAR_TOKEN: $TASK_URL | jq -r .task.analysisId)
+            echo "$ANALISYS_ID."
+            echo -n "Checking Quality Gate info... "
+            GATE_API='https://sonarcloud.io/api/qualitygates'
+            GATE_STATUS=$(curl -s -u $SONAR_TOKEN: "$GATE_API/project_status?analysisId=${ANALISYS_ID}" | jq -r .projectStatus.status)
+            echo "$GATE_STATUS."
+            if [[ $GATE_STATUS == 'OK' ]]; then 
+              exit 0
+            else
+              echo 'The quality gate failed. Please, review the reasons on SonarCloud!'
+              exit 1
+            fi
+          else 
+            echo 'The analisys failed. Please, review your settings and sonar token!'
+            exit 1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.githubToken }}
+          SONAR_TOKEN: ${{ secrets.sonarToken }}
 
+
+  # -----------------------------------------------------------------------------------------
+  # Job to run Lint (.Net)
+  # -----------------------------------------------------------------------------------------
+  dotnetLint:
+    name: '.Net / Lint'
+    if: ( inputs.dotnetLint ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [safeCheck]
+    steps:
+      - name: 'Trusted checkout'
+        uses: actions/checkout@v3
+        if: ( github.event.pull_request.head.repo.fork == false )
+        with:
+          fetch-depth: 0
+      - name: 'Untrusted checkout'
+        uses: actions/checkout@v3
+        if: ( github.event.pull_request.head.repo.fork == true )
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          fetch-depth: 0
+      - name: Setup .Net
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{ inputs.dotnetVersion }}
+      - name: Install dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+  # -----------------------------------------------------------------------------------------
+  # Job to run Tests (.Net)
+  # -----------------------------------------------------------------------------------------
+  dotnetTest:
+    name: '.Net / Unit test'
+    if: ( inputs.dotnetTest ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [safeCheck]
+    steps:
+      - name: 'Trusted checkout'
+        uses: actions/checkout@v3
+        if: ( github.event.pull_request.head.repo.fork == false )
+        with:
+          fetch-depth: 0
+      - name: 'Untrusted checkout'
+        uses: actions/checkout@v3
+        if: ( github.event.pull_request.head.repo.fork == true )
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          fetch-depth: 0
+      - name: Setup .Net
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{ inputs.dotnetVersion }}
+      - name: Install dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+      - name: Test
+        run: dotnet test --no-restore --verbosity normal
+        
   # -----------------------------------------------------------------------------------------
   # Job to run SonarCloud (.Net)
   # -----------------------------------------------------------------------------------------
   dotnetSonar:
-    name: 'Sonar / dotnet'
+    name: '.Net / SonarCloud'
     if: ( inputs.dotnetSonar ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
     runs-on: windows-latest
     timeout-minutes: 10
-    needs: [safeCheck]
+    needs: [dotnetLint, dotnetTest]
     concurrency:
       group: dotnetSonar-${{ github.actor }}
     steps:
@@ -395,7 +512,7 @@ jobs:
     if: ( inputs.cypress ) && ( github.event.pull_request.draft == false )
     runs-on: ubuntu-latest
     timeout-minutes: ${{ inputs.cyRunnerTimeOut }}
-    needs: [safeCheck]
+    needs: [nodeSonar, dotnetSonar]
     concurrency:
       group: ${{ github.workflow }}
     steps:
