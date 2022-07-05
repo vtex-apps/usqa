@@ -261,7 +261,7 @@ jobs:
   # Job to run tests (Node.js on node folder)
   # -----------------------------------------------------------------------------------------
   nodeTest:
-    name: 'Node.js / Node / Unit test'
+    name: 'Node / Unit test'
     if: ${{ inputs.nodeTest }}
     runs-on: ubuntu-latest
     needs: [safeCheck]
@@ -300,7 +300,7 @@ jobs:
   # Job to run tests (Node.js on react folder)
   # -----------------------------------------------------------------------------------------
   reactTest:
-    name: 'Node.js / React / Unit test'
+    name: 'React / Unit test'
     if: ${{ inputs.reactTest }}
     runs-on: ubuntu-latest
     needs: [safeCheck]
@@ -375,6 +375,14 @@ jobs:
             yarn install --frozen-lockfile
             cd -
           done
+      - name: 'Gererate Node coverage report'
+        if: ${{ inputs.nodeTest }}
+        run: yarn test --coverage
+        working-directory: node
+      - name: 'Gererate React coverage report'
+        if: ${{ inputs.reactTest }}
+        run: yarn test --coverage
+        working-directory: react
       - name: 'Trusted SonarCloud Scan'
         if: ( github.event.pull_request.head.repo.fork == false )
         uses: SonarSource/sonarcloud-github-action@v1.6
