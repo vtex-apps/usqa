@@ -282,15 +282,26 @@ jobs:
           node-version: 16
           cache: yarn
         continue-on-error: true
-      - name: 'Run test on every builder directory'
-        uses: vtex/action-io-app-test@master
+      - name: 'Install dependencies'
+        run: |
+          echo "==> Installing root packages..."
+          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
+            echo "==> Installing $DIR packages..."
+            cd "$DIR"
+            yarn install --frozen-lockfile
+            cd -
+          done
+      - name: 'Run unit tests on node folder'
+        run: yarn test --coverage
+        working-directory: node
 
   # -----------------------------------------------------------------------------------------
   # Job to run tests (Node.js on react folder)
   # -----------------------------------------------------------------------------------------
   reactTest:
     name: 'Node.js / Unit test (react)'
-    if: ${{ inputs.nodeTest }}
+    if: ${{ inputs.reactTest }}
     runs-on: ubuntu-latest
     needs: [safeCheck]
     timeout-minutes: 5
@@ -310,8 +321,19 @@ jobs:
           node-version: 16
           cache: yarn
         continue-on-error: true
-      - name: 'Run test on every builder directory'
-        uses: vtex/action-io-app-test@master
+      - name: 'Install dependencies'
+        run: |
+          echo "==> Installing root packages..."
+          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
+            echo "==> Installing $DIR packages..."
+            cd "$DIR"
+            yarn install --frozen-lockfile
+            cd -
+          done
+      - name: 'Run unit tests on react folder'
+        run: yarn test --coverage
+        working-directory: react
         
   # -----------------------------------------------------------------------------------------
   # Job to run SonarCloud (Node.js)
@@ -391,15 +413,19 @@ jobs:
             TRY=$(( $TRY + 1 ))
           done
           if [[ $STATUS == 'SUCCESS' ]]; then
-            ANALISYS_ID='ERROR'
             echo -n "Trying to get analysis ID from SonarCloud... "
             sleep 5
             ANALISYS_ID=$(curl -s -u $SONAR_TOKEN: $TASK_URL | jq -r .task.analysisId)
             echo "$ANALISYS_ID."
-            echo -n "Checking Quality Gate info... "
+            TRY=1
             GATE_API='https://sonarcloud.io/api/qualitygates'
-            GATE_STATUS=$(curl -s -u $SONAR_TOKEN: "$GATE_API/project_status?analysisId=${ANALISYS_ID}" | jq -r .projectStatus.status)
-            echo "$GATE_STATUS."
+            while [[ $GATE_STATUS != 'OK' && $TRY -le $MAX_TRY ]]; do
+              echo -n "Checking Quality Gate info ($TRY of $MAX_TRY)... "
+              sleep 5
+              GATE_STATUS=$(curl -s -u $SONAR_TOKEN: "$GATE_API/project_status?analysisId=${ANALISYS_ID}" | jq -r .projectStatus.status)
+              echo "$GATE_STATUS."
+             TRY=$(( $TRY + 1 ))
+            done              
             if [[ $GATE_STATUS == 'OK' ]]; then 
               exit 0
             else
