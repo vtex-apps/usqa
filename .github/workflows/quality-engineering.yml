@@ -80,7 +80,7 @@ on:
         default: false
         required: false
       cyRunnerBranch:
-        description: 'Witch branch use in Cypress-Runner?'
+        description: 'Which branch use in Cypress-Runner?'
         type: string
         default: 'main'
         required: false
