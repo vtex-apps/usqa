@@ -340,7 +340,14 @@ jobs:
   # -----------------------------------------------------------------------------------------
   nodeSonar:
     name: 'SonarCloud / Node.js'
-    if: ( inputs.nodeSonar ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
+    if: |
+      always()
+      && ( inputs.nodeSonar ) 
+      && ( github.actor != 'dependabot[bot]' )  
+      && ( github.event.pull_request.draft == false )
+      && ( needs.nodeLint.result == 'success' || needs.nodeLint.result == 'skipped')
+      && ( needs.nodeTest.result == 'success' || needs.nodeTest.result == 'skipped')
+      && ( needs.reactTest.result == 'success' || needs.reactTest.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [nodeLint, nodeTest, reactTest]
