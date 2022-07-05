@@ -95,9 +95,14 @@ on:
         default: false
         required: false
       cyRunnerBranch:
-        description: 'Cypress Runner branch'
+        description: 'Which branch use in Cypress-Runner?'
         type: string
         default: 'main'
+        required: false
+      cyRunnerTimeOut:
+        description: 'What is the time out for the Cypress-Runner job?'
+        type: number
+        default: 30
         required: false
         
     secrets:
@@ -506,7 +511,7 @@ jobs:
     name: 'Cypress'
     if: ( inputs.cypress ) && ( github.event.pull_request.draft == false )
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: ${{ inputs.cyRunnerTimeOut }}
     needs: [nodeSonar, dotnetSonar]
     concurrency:
       group: ${{ github.workflow }}
