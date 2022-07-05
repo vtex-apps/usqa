@@ -226,11 +226,8 @@ jobs:
     timeout-minutes: 5
     needs: [safeCheck]
     outputs:
-      substantialChanges: ${{ steps.substantial.outputs.changes }}
+      substantialChanges: ${{ needs.safeCheck.outputs.substantialChanges }}
     steps:
-      - name: 'Get substantialChanges and save for dependant jobs'
-        id: substantial
-        run: echo "::set-output name=changes::needs.safeCheck.outputs.substantialChanges"
       - name: 'Trusted checkout'
         uses: actions/checkout@v3
         if: ( github.event.pull_request.head.repo.fork == false )
@@ -361,7 +358,7 @@ jobs:
     steps:
       - name: 'Testing substantial changes'
         run: |
-          echo needs.safeCheck.outputs.substantialChanges
+          echo ${{ needs.nodeLint.outputs.substantialChanges }}
           exit 1
       - name: 'Trusted checkout'
         uses: actions/checkout@v3
