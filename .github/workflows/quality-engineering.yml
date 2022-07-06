@@ -34,40 +34,60 @@ on:
         default: false
         required: false
       nodeTest:
-        description: 'Run node unit tests?'
+        description: 'Run Node.js unit tests on node folder?'
+        type: boolean
+        default: false
+        required: false
+      reactTest:
+        description: 'Run Node.js unit tests on react folder?'
         type: boolean
         default: false
         required: false
       nodeSonar:
-        description: 'Run node SonarCloud?'
+        description: 'Run Node.js SonarCloud?'
         type: boolean
         default: false
         required: false
       nodeSonarProjectKey:
-        description: 'What is the SonarCloud project for Node?'
+        description: 'What is the SonarCloud project for Node.js?'
         type: string
         default: none
         required: false
       nodeSonarOrganization:
-        description: 'What is the SonarCloud Organization for Node?'
+        description: 'What is the SonarCloud Organization for Node.js?'
         type: string
         default: none
         required: false
       # -----------------------------------------------------------------------------------------
       # dotNet Section [Sonar]
       # -----------------------------------------------------------------------------------------
+      dotnetLint:
+        description: 'Run .Net Lint?'
+        type: boolean
+        default: false
+        required: false
+      dotnetTest:
+        description: 'Run .Net unit tests?'
+        type: boolean
+        default: false
+        required: false        
+      dotnetVersion:
+        description: 'What is the .Net version?'
+        type: string
+        default: '3.0'
+        required: false
       dotnetSonar:
-        description: 'Run SonarCloud for dotNet?'
+        description: 'Run SonarCloud for .Net?'
         type: boolean
         default: false
         required: false
       dotnetSonarProjectKey:
-        description: 'What is the SonarCloud project for dotnet?'
+        description: 'What is the SonarCloud project for .Net?'
         type: string
         default: none
         required: false
       dotnetSonarOrganization:
-        description: 'What is the SonarCloud Organization for dotnet?'
+        description: 'What is the SonarCloud Organization for .Net?'
         type: string
         default: none
         required: false
@@ -197,14 +217,16 @@ jobs:
           REQUIRE_CHANGELOG_VERSION: ${{ inputs.dangerRequireChangelog }}
 
   # -----------------------------------------------------------------------------------------
-  # Job to run Lint (node)
+  # Job to run Lint (Node.js)
   # -----------------------------------------------------------------------------------------
   nodeLint:
-    name: 'Lint / node'
+    name: 'Lint / Node.js'
     if: ${{ inputs.nodeLint || inputs.nodeSonar || inputs.nodeTest}}
     runs-on: ubuntu-latest
-    timeout-minutes: 5
     needs: [safeCheck]
+    outputs:
+      substantialChanges: ${{ needs.safeCheck.outputs.substantialChanges }}
+    timeout-minutes: 5
     steps:
       - name: 'Trusted checkout'
         uses: actions/checkout@v3
@@ -215,7 +237,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
-      - name: 'Set up NodeJS'
+      - name: 'Set up Node.js'
         if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'push' )
         uses: actions/setup-node@v3
         with:
@@ -225,26 +247,26 @@ jobs:
       - name: 'Install packages'
         if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'push' )
         run: |
-          for DIR in '.' 'node' 'react'; do
-            if [[ -f "$DIR/package.json" ]]; then
-              echo -e "\nInstalling $DIR packages...\n"
-              cd "$DIR"
-              yarn install --frozen-lockfile
-              cd -
-            fi
+          echo "==> Installing root packages..."
+          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
+            echo "==> Installing $DIR packages..."
+            cd "$DIR"
+            yarn install --frozen-lockfile
+            cd -
           done
       - name: 'Run lint'
         if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'push' )
         run: yarn lint
 
   # -----------------------------------------------------------------------------------------
-  # Job to run tests (node)
+  # Job to run tests (Node.js on node folder)
   # -----------------------------------------------------------------------------------------
   nodeTest:
-    name: 'Unit tests / node'
+    name: 'Unit test / Node'
     if: ${{ inputs.nodeTest }}
     runs-on: ubuntu-latest
-    needs: [nodeLint]
+    needs: [safeCheck]
     timeout-minutes: 5
     steps:
       - name: 'Trusted checkout'
@@ -256,24 +278,83 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
-      - name: 'Set up NodeJS'
+      - name: 'Set up Node.js'
         uses: actions/setup-node@v3
         with:
           node-version: 16
           cache: yarn
         continue-on-error: true
-      - name: 'Run test on every builder directory'
-        uses: vtex/action-io-app-test@master
+      - name: 'Install dependencies'
+        run: |
+          echo "==> Installing root packages..."
+          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
+            echo "==> Installing $DIR packages..."
+            cd "$DIR"
+            yarn install --frozen-lockfile
+            cd -
+          done
+      - name: 'Run unit tests on node folder'
+        run: yarn test --coverage
+        working-directory: node
 
   # -----------------------------------------------------------------------------------------
-  # Job to run SonarCloud (node)
+  # Job to run tests (Node.js on react folder)
+  # -----------------------------------------------------------------------------------------
+  reactTest:
+    name: 'Unit test / React'
+    if: ${{ inputs.reactTest }}
+    runs-on: ubuntu-latest
+    needs: [safeCheck]
+    timeout-minutes: 5
+    steps:
+      - name: 'Trusted checkout'
+        uses: actions/checkout@v3
+        if: ( github.event.pull_request.head.repo.fork == false )
+      - name: 'Untrusted checkout'
+        uses: actions/checkout@v3
+        if: ( github.event.pull_request.head.repo.fork == true )
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - name: 'Set up Node.js'
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: yarn
+        continue-on-error: true
+      - name: 'Install dependencies'
+        run: |
+          echo "==> Installing root packages..."
+          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
+            echo "==> Installing $DIR packages..."
+            cd "$DIR"
+            yarn install --frozen-lockfile
+            cd -
+          done
+      - name: 'Run unit tests on react folder'
+        run: yarn test --coverage
+        working-directory: react
+        
+  # -----------------------------------------------------------------------------------------
+  # Job to run SonarCloud (Node.js)
   # -----------------------------------------------------------------------------------------
   nodeSonar:
-    name: 'Sonar / node'
-    if: ( inputs.nodeSonar ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
+    name: 'SonarCloud / Node.js'
+    if: |
+      always()
+      && ( inputs.nodeSonar ) 
+      && ( github.actor != 'dependabot[bot]' )  
+      && ( github.event.pull_request.draft == false )
+      && ( needs.nodeLint.result == 'success' || needs.nodeLint.result == 'skipped')
+      && ( needs.nodeTest.result == 'success' || needs.nodeTest.result == 'skipped')
+      && ( needs.reactTest.result == 'success' || needs.reactTest.result == 'skipped')
     runs-on: ubuntu-latest
+    needs: [nodeLint, nodeTest, reactTest]
+    outputs:
+      substantialChanges: ${{ needs.nodeLint.outputs.substantialChanges }}        
     timeout-minutes: 5
-    needs: [nodeLint]
     concurrency:
       group: nodeSonar-${{ github.actor }}
     steps:
@@ -289,7 +370,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           fetch-depth: 0
-      - name: 'Set up NodeJS'
+      - name: 'Set up Node.js'
         uses: actions/setup-node@v3
         with:
           node-version: 16
@@ -297,14 +378,22 @@ jobs:
         continue-on-error: true
       - name: 'Install packages'
         run: |
-          for DIR in '.' 'node' 'react'; do
-            if [[ -f "$DIR/package.json" ]]; then
-              echo -e "\nInstalling $DIR packages...\n"
-              cd "$DIR"
-              yarn install --frozen-lockfile
-              cd -
-            fi
+          echo "==> Installing root packages..."
+          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
+            echo "==> Installing $DIR packages..."
+            cd "$DIR"
+            yarn install --frozen-lockfile
+            cd -
           done
+      - name: 'Gererate Node coverage report'
+        if: ${{ inputs.nodeTest }}
+        run: yarn test --coverage
+        working-directory: node
+      - name: 'Gererate React coverage report'
+        if: ${{ inputs.reactTest }}
+        run: yarn test --coverage
+        working-directory: react
       - name: 'Trusted SonarCloud Scan'
         if: ( github.event.pull_request.head.repo.fork == false )
         uses: SonarSource/sonarcloud-github-action@v1.6
@@ -328,16 +417,126 @@ jobs:
             -Dsonar.pullrequest.key=${{ github.event.pull_request.number }} 
             -Dsonar.pullrequest.branch=${{ github.event.pull_request.head.ref }} 
             -Dsonar.scm.revision=${{ github.event.pull_request.head.sha }}
+      - name: 'Process SonarCloud results'
+        working-directory: .scannerwork
+        run: |
+          TASK_URL=$(sed -nr 's/ceTaskUrl=(.*)/\1/p' report-task.txt)
+          STATUS='FAILURE'
+          MAX_TRY=3
+          TRY=1
+          while [[ $STATUS != 'SUCCESS' && $TRY -le $MAX_TRY ]]; do
+            echo -n "Trying to get status from SonarCloud ($TRY of $MAX_TRY)... "
+            sleep 5
+            STATUS=$(curl -s -u $SONAR_TOKEN: $TASK_URL | jq .task.status | sed s/\"//g)
+            echo "$STATUS."
+            TRY=$(( $TRY + 1 ))
+          done
+          if [[ $STATUS == 'SUCCESS' ]]; then
+            echo -n "Trying to get analysis ID from SonarCloud... "
+            sleep 5
+            ANALISYS_ID=$(curl -s -u $SONAR_TOKEN: $TASK_URL | jq -r .task.analysisId)
+            echo "$ANALISYS_ID."
+            TRY=1
+            GATE_API='https://sonarcloud.io/api/qualitygates'
+            while [[ $GATE_STATUS != 'OK' && $TRY -le $MAX_TRY ]]; do
+              echo -n "Checking Quality Gate info ($TRY of $MAX_TRY)... "
+              sleep 5
+              GATE_STATUS=$(curl -s -u $SONAR_TOKEN: "$GATE_API/project_status?analysisId=${ANALISYS_ID}" | jq -r .projectStatus.status)
+              echo "$GATE_STATUS."
+             TRY=$(( $TRY + 1 ))
+            done              
+            if [[ $GATE_STATUS == 'OK' ]]; then 
+              exit 0
+            else
+              echo 'The quality gate failed. Please, review the reasons on SonarCloud!'
+              exit 1
+            fi
+          else 
+            echo 'The analisys failed. Please, review your settings and sonar token!'
+            exit 1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.githubToken }}
+          SONAR_TOKEN: ${{ secrets.sonarToken }}
 
+
+  # -----------------------------------------------------------------------------------------
+  # Job to run Lint (.Net)
+  # -----------------------------------------------------------------------------------------
+  dotnetLint:
+    name: 'Lint / .Net'
+    if: ( inputs.dotnetLint ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
+    runs-on: ubuntu-latest
+    needs: [safeCheck]
+    outputs:
+      substantialChanges: ${{ needs.safeCheck.outputs.substantialChanges }}        
+    timeout-minutes: 10    
+    steps:
+      - name: 'Trusted checkout'
+        uses: actions/checkout@v3
+        if: ( github.event.pull_request.head.repo.fork == false )
+      - name: 'Untrusted checkout'
+        uses: actions/checkout@v3
+        if: ( github.event.pull_request.head.repo.fork == true )
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - name: Setup .Net
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{ inputs.dotnetVersion }}
+      - name: Install dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+  # -----------------------------------------------------------------------------------------
+  # Job to run Tests (.Net)
+  # -----------------------------------------------------------------------------------------
+  dotnetTest:
+    name: 'Unit test / .Net'
+    if: ( inputs.dotnetTest ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [safeCheck]
+    steps:
+      - name: 'Trusted checkout'
+        uses: actions/checkout@v3
+        if: ( github.event.pull_request.head.repo.fork == false )
+      - name: 'Untrusted checkout'
+        uses: actions/checkout@v3
+        if: ( github.event.pull_request.head.repo.fork == true )
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - name: Setup .Net
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{ inputs.dotnetVersion }}
+      - name: Install dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore &> /dev/null
+      - name: Test
+        run: dotnet test --no-restore --verbosity normal
+        
   # -----------------------------------------------------------------------------------------
   # Job to run SonarCloud (.Net)
   # -----------------------------------------------------------------------------------------
   dotnetSonar:
-    name: 'Sonar / dotnet'
-    if: ( inputs.dotnetSonar ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
+    name: 'SonarCloud / .Net'
+    if: |
+      always()
+      && ( inputs.dotnetSonar ) 
+      && ( github.actor != 'dependabot[bot]' )  
+      && ( github.event.pull_request.draft == false )
+      && ( needs.dotnetLint.result == 'success' || needs.dotnetLint.result == 'skipped')
+      && ( needs.dotnetTest.result == 'success' || needs.dotnetTest.result == 'skipped')
     runs-on: windows-latest
     timeout-minutes: 10
-    needs: [safeCheck]
+    outputs:
+      substantialChanges: ${{ needs.dotnetLint.outputs.substantialChanges }}            
+    needs: [dotnetLint, dotnetTest]
     concurrency:
       group: dotnetSonar-${{ github.actor }}
     steps:
@@ -392,10 +591,17 @@ jobs:
   # -----------------------------------------------------------------------------------------
   cypress:
     name: 'Cypress'
-    if: ( inputs.cypress ) && ( github.event.pull_request.draft == false )
+    if: |
+      always()
+      && ( inputs.cypress ) 
+      && ( github.actor != 'dependabot[bot]' )  
+      && ( github.event.pull_request.draft == false )
+      && ( needs.nodeSonar.result == 'success' || needs.nodeSonar.result == 'skipped')
+      && ( needs.dotnetSonar.result == 'success' || needs.dotnetSonar.result == 'skipped')
+      && ( needs.nodeSonar.outputs.substantialChanges != null || needs.dotnetSonar.outputs.substantialChanges != null)
     runs-on: ubuntu-latest
     timeout-minutes: ${{ inputs.cyRunnerTimeOut }}
-    needs: [safeCheck]
+    needs: [nodeSonar, dotnetSonar]
     concurrency:
       group: ${{ github.workflow }}
     steps:
@@ -406,32 +612,48 @@ jobs:
         uses: actions/checkout@v3
         if: ( github.event.pull_request.head.repo.fork == true )
       - name: 'Checkout Cy-Runner'
-        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'schedule' ) || ( github.event_name == 'workflow_dispatch' )
+        if: |
+          needs.nodeSonar.outputs.substantialChanges == 'true'
+          || needs.dotnetSonar.outputs.substantialChanges == 'true'
+          || github.event_name == 'schedule'
+          || github.event_name == 'workflow_dispatch'
         uses: actions/checkout@v3
         with:
           repository: vtex-apps/cy-runner
           ref: ${{ inputs.cyRunnerBranch }}
           path: cy-runner
       - name: 'Set up NodeJS'
-        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'schedule' ) || ( github.event_name == 'workflow_dispatch' )
+        if: |
+          needs.nodeSonar.outputs.substantialChanges == 'true'
+          || needs.dotnetSonar.outputs.substantialChanges == 'true'
+          || github.event_name == 'schedule'
+          || github.event_name == 'workflow_dispatch'
         uses: actions/setup-node@v3
         with:
           node-version: 16
           cache: yarn
         continue-on-error: true
       - name: 'Install packages'
-        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'schedule' ) || ( github.event_name == 'workflow_dispatch' )
+        if: |
+          needs.nodeSonar.outputs.substantialChanges == 'true'
+          || needs.dotnetSonar.outputs.substantialChanges == 'true'
+          || github.event_name == 'schedule'
+          || github.event_name == 'workflow_dispatch'
         run: |
-          for DIR in '.' 'node' 'react'; do
-            if [[ -f "$DIR/package.json" ]]; then
-              echo -e "\nInstalling $DIR packages...\n"
-              cd "$DIR"
-              yarn install --frozen-lockfile
-              cd -
-            fi
+          echo "==> Installing root packages..."
+          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
+            echo "==> Installing $DIR packages..."
+            cd "$DIR"
+            yarn install --frozen-lockfile
+            cd -
           done
       - name: 'Install Cy-Runner'
-        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'schedule' ) || ( github.event_name == 'workflow_dispatch' )
+        if: |
+          needs.nodeSonar.outputs.substantialChanges == 'true'
+          || needs.dotnetSonar.outputs.substantialChanges == 'true'
+          || github.event_name == 'schedule'
+          || github.event_name == 'workflow_dispatch'
         run: |
           yarn install --frozen-lockfile 
           rm -rf .git
