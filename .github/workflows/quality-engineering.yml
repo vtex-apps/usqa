@@ -598,7 +598,6 @@ jobs:
       && ( github.event.pull_request.draft == false )
       && ( needs.nodeSonar.result == 'success' || needs.nodeSonar.result == 'skipped')
       && ( needs.dotnetSonar.result == 'success' || needs.dotnetSonar.result == 'skipped')
-      && ( needs.nodeSonar.outputs.substantialChanges != null || needs.dotnetSonar.outputs.substantialChanges != null)
     runs-on: ubuntu-latest
     timeout-minutes: ${{ inputs.cyRunnerTimeOut }}
     needs: [nodeSonar, dotnetSonar]
