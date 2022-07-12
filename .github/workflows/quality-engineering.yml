@@ -381,7 +381,7 @@ jobs:
           echo "==> Installing root packages..."
           [[ -f 'package.json' ]] && yarn install --frozen-lockfile
           for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
-            // checkout-ui-custom has a bug on package.json installation, so let's skip it
+            # checkout-ui-custom has a bug on package.json installation, so let's skip it
             if [[ $DIR != 'checkout-ui-custom' ]]; then
               echo "==> Installing $DIR packages..."
               cd "$DIR"
