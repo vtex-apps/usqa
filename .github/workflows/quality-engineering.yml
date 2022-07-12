@@ -381,10 +381,13 @@ jobs:
           echo "==> Installing root packages..."
           [[ -f 'package.json' ]] && yarn install --frozen-lockfile
           for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
-            echo "==> Installing $DIR packages..."
-            cd "$DIR"
-            yarn install --frozen-lockfile
-            cd -
+            // checkout-ui-custom has a bug on package.json installation, so let's skip it
+            if [[ $DIR != 'checkout-ui-custom' ]]; then
+              echo "==> Installing $DIR packages..."
+              cd "$DIR"
+              yarn install --frozen-lockfile
+              cd -
+            fi
           done
       - name: 'Gererate Node coverage report'
         if: ${{ inputs.nodeTest }}
