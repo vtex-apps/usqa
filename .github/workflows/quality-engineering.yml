@@ -659,7 +659,11 @@ jobs:
           yarn cypress info
         working-directory: cy-runner
       - name: 'Run Cy-Runner'
-        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'schedule' ) || ( github.event_name == 'workflow_dispatch' )
+        if: |
+          needs.nodeSonar.outputs.substantialChanges == 'true'
+          || needs.dotnetSonar.outputs.substantialChanges == 'true'
+          || github.event_name == 'schedule'
+          || github.event_name == 'workflow_dispatch'
         run: yarn cy-r
         env:
           VTEX_QE: ${{ secrets.cypressJSON }}
