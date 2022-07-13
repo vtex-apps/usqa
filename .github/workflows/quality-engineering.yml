@@ -237,6 +237,27 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - name: 'Lint JSON'
+        run: |
+          ERROR=0
+          for json in $(find -name "*.json" -not -path "*/node_modules/*"); do
+            jq .lint -cM $json &>/dev/null
+            if [[ $? -eq 0 ]]; then
+              echo "OK: $json"
+            else
+              echo "ERROR: $json"
+              MSG=$(jq .lint -cM messages/en.json 2>&1 |
+                sed 's/\(.*\) at line \(.*\), column \(.*\)$/\1;\2;\3/')
+              # echo "::error file=app.js,line=10,col=15::$text"
+              F=$json
+              E=$(echo $MSG | cut -d ';' -f1)
+              L=$(echo $MSG | cut -d ';' -f2)
+              C=$(echo $MSG | cut -d ';' -f3)
+              echo "::error file=$F,line=$L,col=$C::$E"
+              ERROR=1
+            fi
+          done
+          [[ $ERROR -eq 1]] && exit 1
       - name: 'Set up Node.js'
         if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'push' )
         uses: actions/setup-node@v3
