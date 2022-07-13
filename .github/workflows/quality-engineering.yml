@@ -250,10 +250,13 @@ jobs:
           echo "==> Installing root packages..."
           [[ -f 'package.json' ]] && yarn install --frozen-lockfile
           for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
-            echo "==> Installing $DIR packages..."
-            cd "$DIR"
-            yarn install --frozen-lockfile
-            cd -
+            # checkout-ui-custom has a bug on package.json installation, so let's skip it
+            if [[ $DIR != 'checkout-ui-custom' ]]; then
+              echo "==> Installing $DIR packages..."
+              cd "$DIR"
+              yarn install --frozen-lockfile
+              cd -
+            fi
           done
       - name: 'Run lint'
         if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'push' )
@@ -289,10 +292,13 @@ jobs:
           echo "==> Installing root packages..."
           [[ -f 'package.json' ]] && yarn install --frozen-lockfile
           for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
-            echo "==> Installing $DIR packages..."
-            cd "$DIR"
-            yarn install --frozen-lockfile
-            cd -
+            # checkout-ui-custom has a bug on package.json installation, so let's skip it
+            if [[ $DIR != 'checkout-ui-custom' ]]; then
+              echo "==> Installing $DIR packages..."
+              cd "$DIR"
+              yarn install --frozen-lockfile
+              cd -
+            fi
           done
       - name: 'Run unit tests on node folder'
         run: yarn test --coverage
@@ -328,10 +334,13 @@ jobs:
           echo "==> Installing root packages..."
           [[ -f 'package.json' ]] && yarn install --frozen-lockfile
           for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
-            echo "==> Installing $DIR packages..."
-            cd "$DIR"
-            yarn install --frozen-lockfile
-            cd -
+            # checkout-ui-custom has a bug on package.json installation, so let's skip it
+            if [[ $DIR != 'checkout-ui-custom' ]]; then
+              echo "==> Installing $DIR packages..."
+              cd "$DIR"
+              yarn install --frozen-lockfile
+              cd -
+            fi
           done
       - name: 'Run unit tests on react folder'
         run: yarn test --coverage
