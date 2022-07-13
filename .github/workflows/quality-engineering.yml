@@ -241,13 +241,13 @@ jobs:
         run: |
           ERROR=0
           for json in $(find -name "*.json" -not -path "*/node_modules/*"); do
-            jq .lint -cM $json &>/dev/null
+            jq . -cM $json &>/dev/null
             if [[ $? -eq 0 ]]; then
               echo "OK: $json"
             else
               echo "ERROR: $json"
-              MSG=$(jq .lint -cM $json 2>&1 | 
-                    sed 's/\(.*\) at line \(.*\), column \(.*\)$/\1;\2;\3/' || 0)
+              MSG=$(jq . -cM $json 2>&1 | 
+                    sed 's/\(.*\) at line \(.*\), column \(.*\)$/\1;\2;\3/')
               F=$json
               E=$(echo $MSG | cut -d ';' -f1)
               L=$(echo $MSG | cut -d ';' -f2)
