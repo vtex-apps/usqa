@@ -246,7 +246,8 @@ jobs:
               echo "OK: $json"
             else
               echo "ERROR: $json"
-              MSG=$(jq .lint -cM $json 2>&1 | sed 's/\(.*\) at line \(.*\), column \(.*\)$/\1;\2;\3/')
+              MSG=$(jq .lint -cM $json 2>&1 | 
+                    sed 's/\(.*\) at line \(.*\), column \(.*\)$/\1;\2;\3/' || 0)
               F=$json
               E=$(echo $MSG | cut -d ';' -f1)
               L=$(echo $MSG | cut -d ';' -f2)
