@@ -241,12 +241,13 @@ jobs:
         run: |
           FAILED=0
           for json in $(find -name "*.json" -not -path "*/node_modules/*"); do
-            jq . -cM $json &>/dev/null
-            if [[ $? -eq 0 ]]; then
+            ERROR=0
+            jq . -cM $json &>/dev/null || ERROR=1
+            if [[ $ERROR -eq 0 ]]; then
               echo "OK: $json"
             else
               echo "ERROR: $json"
-              jq . -cM $json 2>error || echo $? 
+              jq . -cM $json 2>error || echo "Code jq error: $?"
               MSG=$(sed 's/\(.*\) at line \(.*\), column \(.*\)$/\1;\2;\3/' error)
               F="$json"
               E="$(echo $MSG | cut -d ';' -f1)"
