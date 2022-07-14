@@ -246,7 +246,7 @@ jobs:
               echo "OK: $json"
             else
               echo "ERROR: $json"
-              MSG=$(jq . -cM $json 2>&1 | 
+              MSG=$(jq . -cM $json 2>error || cat error | 
                     sed 's/\(.*\) at line \(.*\), column \(.*\)$/\1;\2;\3/')
               F="$json"
               E="$(echo $MSG | cut -d ';' -f1)"
