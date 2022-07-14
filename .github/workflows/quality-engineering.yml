@@ -627,11 +627,16 @@ jobs:
       && ( github.actor != 'dependabot[bot]' )  
       && ( github.event.pull_request.draft == false )
       && ( needs.safeCheck.result == 'success')
+      && ( needs.nodeLint.result == 'success' || needs.nodeLint.result == 'skipped')
+      && ( needs.nodeTest.result == 'success' || needs.nodeTest.result == 'skipped')
+      && ( needs.reactTest.result == 'success' || needs.reactTest.result == 'skipped')      
       && ( needs.nodeSonar.result == 'success' || needs.nodeSonar.result == 'skipped')
+      && ( needs.dotnetLint.result == 'success' || needs.dotnetLint.result == 'skipped')
+      && ( needs.dotnetTest.result == 'success' || needs.dotnetTest.result == 'skipped')      
       && ( needs.dotnetSonar.result == 'success' || needs.dotnetSonar.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: ${{ inputs.cyRunnerTimeOut }}
-    needs: [safeCheck, nodeSonar, dotnetSonar]
+    needs: [safeCheck, nodeLint, nodeTest, reactTest, nodeSonar, dotnetLint, dotnetTest, dotnetSonar]
     concurrency:
       group: ${{ github.workflow }}
     steps:
