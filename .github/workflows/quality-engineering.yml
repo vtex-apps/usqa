@@ -239,8 +239,9 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
       - name: 'Lint JSON'
         run: |
-          ERROR=0
+          FAILED=0
           for json in $(find -name "*.json" -not -path "*/node_modules/*"); do
+            echo "Processing $json..."
             jq . -cM $json &>/dev/null
             if [[ $? -eq 0 ]]; then
               echo "OK: $json"
@@ -248,15 +249,16 @@ jobs:
               echo "ERROR: $json"
               MSG=$(jq . -cM $json 2>&1 | 
                     sed 's/\(.*\) at line \(.*\), column \(.*\)$/\1;\2;\3/')
-              F=$json
-              E=$(echo $MSG | cut -d ';' -f1)
+              F="$json"
+              E="$(echo $MSG | cut -d ';' -f1)"
               L=$(echo $MSG | cut -d ';' -f2)
               C=$(echo $MSG | cut -d ';' -f3)
               echo "::error file=$F,line=$L,col=$C::$E"
-              ERROR=1
+              FAILED=1
             fi
           done
-          [[ $ERROR -eq 1 ]] && exit 1
+          echo $FAILED
+          [[ $FAILED -eq 1 ]] && exit 1
       - name: 'Set up Node.js'
         if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'push' )
         uses: actions/setup-node@v3
