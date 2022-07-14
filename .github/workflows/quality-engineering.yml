@@ -225,8 +225,6 @@ jobs:
     if: ${{ inputs.nodeLint || inputs.nodeSonar || inputs.nodeTest}}
     runs-on: ubuntu-latest
     needs: [safeCheck]
-    outputs:
-      substantialChanges: ${{ needs.safeCheck.outputs.substantialChanges }}
     timeout-minutes: 5
     steps:
       - name: 'Trusted checkout'
@@ -379,13 +377,12 @@ jobs:
       && ( inputs.nodeSonar ) 
       && ( github.actor != 'dependabot[bot]' )  
       && ( github.event.pull_request.draft == false )
+      && ( needs.safeCheck.result == 'success')
       && ( needs.nodeLint.result == 'success' || needs.nodeLint.result == 'skipped')
       && ( needs.nodeTest.result == 'success' || needs.nodeTest.result == 'skipped')
       && ( needs.reactTest.result == 'success' || needs.reactTest.result == 'skipped')
     runs-on: ubuntu-latest
-    needs: [nodeLint, nodeTest, reactTest]
-    outputs:
-      substantialChanges: ${{ needs.nodeLint.outputs.substantialChanges }}        
+    needs: [safeCheck, nodeLint, nodeTest, reactTest]
     timeout-minutes: 5
     concurrency:
       group: nodeSonar-${{ github.actor }}
@@ -503,8 +500,6 @@ jobs:
     if: ( inputs.dotnetLint ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
     runs-on: ubuntu-latest
     needs: [safeCheck]
-    outputs:
-      substantialChanges: ${{ needs.safeCheck.outputs.substantialChanges }}        
     timeout-minutes: 10    
     steps:
       - name: 'Trusted checkout'
@@ -565,13 +560,12 @@ jobs:
       && ( inputs.dotnetSonar ) 
       && ( github.actor != 'dependabot[bot]' )  
       && ( github.event.pull_request.draft == false )
+      && ( needs.safeCheck.result == 'success')
       && ( needs.dotnetLint.result == 'success' || needs.dotnetLint.result == 'skipped')
       && ( needs.dotnetTest.result == 'success' || needs.dotnetTest.result == 'skipped')
     runs-on: windows-latest
     timeout-minutes: 10
-    outputs:
-      substantialChanges: ${{ needs.dotnetLint.outputs.substantialChanges }}            
-    needs: [dotnetLint, dotnetTest]
+    needs: [safeCheck, dotnetLint, dotnetTest]
     concurrency:
       group: dotnetSonar-${{ github.actor }}
     steps:
@@ -631,11 +625,12 @@ jobs:
       && ( inputs.cypress ) 
       && ( github.actor != 'dependabot[bot]' )  
       && ( github.event.pull_request.draft == false )
+      && ( needs.safeCheck.result == 'success')
       && ( needs.nodeSonar.result == 'success' || needs.nodeSonar.result == 'skipped')
       && ( needs.dotnetSonar.result == 'success' || needs.dotnetSonar.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: ${{ inputs.cyRunnerTimeOut }}
-    needs: [nodeSonar, dotnetSonar]
+    needs: [safeCheck, nodeSonar, dotnetSonar]
     concurrency:
       group: ${{ github.workflow }}
     steps:
@@ -647,8 +642,7 @@ jobs:
         if: ( github.event.pull_request.head.repo.fork == true )
       - name: 'Checkout Cy-Runner'
         if: |
-          needs.nodeSonar.outputs.substantialChanges == 'true'
-          || needs.dotnetSonar.outputs.substantialChanges == 'true'
+          needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
         uses: actions/checkout@v3
@@ -658,8 +652,7 @@ jobs:
           path: cy-runner
       - name: 'Set up NodeJS'
         if: |
-          needs.nodeSonar.outputs.substantialChanges == 'true'
-          || needs.dotnetSonar.outputs.substantialChanges == 'true'
+          needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
         uses: actions/setup-node@v3
@@ -669,8 +662,7 @@ jobs:
         continue-on-error: true
       - name: 'Install packages'
         if: |
-          needs.nodeSonar.outputs.substantialChanges == 'true'
-          || needs.dotnetSonar.outputs.substantialChanges == 'true'
+          needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
         run: |
@@ -687,8 +679,7 @@ jobs:
           done
       - name: 'Install Cy-Runner'
         if: |
-          needs.nodeSonar.outputs.substantialChanges == 'true'
-          || needs.dotnetSonar.outputs.substantialChanges == 'true'
+          needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
         run: |
@@ -698,8 +689,7 @@ jobs:
         working-directory: cy-runner
       - name: 'Run Cy-Runner'
         if: |
-          needs.nodeSonar.outputs.substantialChanges == 'true'
-          || needs.dotnetSonar.outputs.substantialChanges == 'true'
+          needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
         run: yarn cy-r
