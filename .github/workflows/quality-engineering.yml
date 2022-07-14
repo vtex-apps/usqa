@@ -173,8 +173,8 @@ jobs:
           files: |
             **/**
           files_ignore: |
-            .github/**
             CHANGELOG.md
+            .github/**
             docs/**
             messages/**
       - name: 'Do we have substantial changes?'
