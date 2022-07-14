@@ -177,7 +177,6 @@ jobs:
             CHANGELOG.md
             docs/**
             messages/**
-            !messages/en.json
       - name: 'Do we have substantial changes?'
         run: echo ${{ steps.changed-files.outputs.any_modified }}
       - name: Debug
