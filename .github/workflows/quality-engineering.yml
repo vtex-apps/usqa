@@ -175,6 +175,7 @@ jobs:
           files_ignore: |
             CHANGELOG.md
             docs/**
+            messages/**
             .github/**
       - name: 'Do we have substantial changes?'
         run: echo ${{ steps.changed-files.outputs.any_modified }}
