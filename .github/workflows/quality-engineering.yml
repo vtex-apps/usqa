@@ -589,11 +589,8 @@ jobs:
             3.1.x
       - name: Install SonarCloud scanner
         run: dotnet tool install --global dotnet-sonarscanner
-      - name: Debug
-        timeout-minutes: 50
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
+      - name: Install dependencies
+        run: dotnet restore
       - name: Build and analyze
         env:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
@@ -601,7 +598,7 @@ jobs:
         run: |
           dotnet-sonarscanner begin /k:"${{ inputs.dotnetSonarProjectKey }}" /o:"${{ inputs.dotnetSonarOrganization }}" /d:sonar.login="${{ secrets.sonarToken }}" /d:sonar.host.url="https://sonarcloud.io"
           dotnet clean
-          dotnet build
+          dotnet dotnet build --configuration Release --no-restore
           dotnet-sonarscanner end /d:sonar.login="${{ secrets.sonarToken }}"
 
   # -----------------------------------------------------------------------------------------
