@@ -581,12 +581,16 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           fetch-depth: 0
-      - name: Setup .Net
+      - name: Setup .Net for App (client vesion)
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: ${{ inputs.dotnetVersion }}
-      #- name: Install SonarCloud scanner
-      #  run: dotnet tool update dotnet-sonarscanner
+      - name: Setup .Net for SonarCloud (3.1.0)
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.0
+      - name: Install SonarCloud scanner
+        run: dotnet tool install --global dotnet-sonarscanner
       - name: Debug
         timeout-minutes: 50
         uses: mxschmitt/action-tmate@v3
