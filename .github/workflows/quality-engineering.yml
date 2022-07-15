@@ -581,14 +581,12 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           fetch-depth: 0
-      - name: Setup .Net for App (client vesion)
+      - name: Setup .Net
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: ${{ inputs.dotnetVersion }}
-      - name: Setup .Net for SonarCloud (3.1.0)
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: 3.1.0
+          dotnet-version: |
+            ${{ inputs.dotnetVersion }}
+            3.1.x
       - name: Install SonarCloud scanner
         run: dotnet tool install --global dotnet-sonarscanner
       - name: Debug
