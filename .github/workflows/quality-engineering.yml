@@ -586,9 +586,12 @@ jobs:
         with:
           dotnet-version: ${{ inputs.dotnetVersion }}
       - name: Install SonarCloud scanner
-        run: |
-          dotnet tool update dotnet-sonarscanner
-          find / -name dotnet-sonarscanner
+        run: dotnet tool update dotnet-sonarscanner
+      - name: Debug
+        timeout-minutes: 50
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
       - name: Build and analyze
         env:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
