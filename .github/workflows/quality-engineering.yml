@@ -585,8 +585,8 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: ${{ inputs.dotnetVersion }}
-      - name: Install SonarCloud scanner
-        run: dotnet tool update dotnet-sonarscanner
+      #- name: Install SonarCloud scanner
+      #  run: dotnet tool update dotnet-sonarscanner
       - name: Debug
         timeout-minutes: 50
         uses: mxschmitt/action-tmate@v3
