@@ -17,7 +17,7 @@ on:
 jobs:
   quality-engineering:
     name: QE
-    uses: vtex-apps/usqa/.github/workflows/quality-engineering.yml@main
+    uses: vtex-apps/usqa/.github/workflows/quality-engineering.yml@v1.0.0
     with:
       # As you pass your Sonar Project Key and Organization,
       # you don't need sonar-project.properties file on root
@@ -48,7 +48,7 @@ on:
 jobs:
   quality-engineering:
     name: QE
-    uses: vtex-apps/usqa/.github/workflows/quality-engineering.yml@main
+    uses: vtex-apps/usqa/.github/workflows/quality-engineering.yml@v1.0.0
     with:
       danger: true
       dangerRequireChangelog: false
@@ -82,7 +82,7 @@ on:
 jobs:
   quality-engineering:
     name: QE
-    uses: vtex-apps/usqa/.github/workflows/quality-engineering.yml@main
+    uses: vtex-apps/usqa/.github/workflows/quality-engineering.yml@v1.0.0
     with:
       danger: true
       dangerRequireChangelog: false
@@ -111,7 +111,7 @@ on:
 jobs:
   quality-engineering:
     name: QE
-    uses: vtex-apps/usqa/.github/workflows/quality-engineering.yml@main
+    uses: vtex-apps/usqa/.github/workflows/quality-engineering.yml@v1.0.0
     with:
       cypress: true
     secrets:

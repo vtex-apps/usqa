@@ -385,7 +385,7 @@ jobs:
     needs: [safeCheck, nodeLint, nodeTest, reactTest]
     timeout-minutes: 5
     concurrency:
-      group: nodeSonar-${{ github.actor }}
+      group: nodeSonar
     steps:
       - name: 'Trusted checkout'
         uses: actions/checkout@v3
@@ -563,16 +563,12 @@ jobs:
       && ( needs.safeCheck.result == 'success')
       && ( needs.dotnetLint.result == 'success' || needs.dotnetLint.result == 'skipped')
       && ( needs.dotnetTest.result == 'success' || needs.dotnetTest.result == 'skipped')
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [safeCheck, dotnetLint, dotnetTest]
     concurrency:
-      group: dotnetSonar-${{ github.actor }}
+      group: dotnetSonar
     steps:
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
-        with:
-          java-version: 1.11
       - name: 'Trusted checkout'
         uses: actions/checkout@v3
         if: ( github.event.pull_request.head.repo.fork == false )
@@ -585,30 +581,16 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           fetch-depth: 0
-      - name: Cache SonarCloud packages
-        uses: actions/cache@v1
+      - name: Setup .Net
+        uses: actions/setup-dotnet@v1
         with:
-          path: ~\sonar\cache
-          key: ${{ runner.os }}-sonar-vtex
-          restore-keys: ${{ runner.os }}-sonar-vtex
-      - name: Cache SonarCloud scanner
-        id: cache-sonar-scanner
-        uses: actions/cache@v1
-        with:
-          path: .\.sonar\scanner
-          key: ${{ runner.os }}-sonar-scanner-vtex
-          restore-keys: ${{ runner.os }}-sonar-scanner-vtex
+          dotnet-version: ${{ inputs.dotnetVersion }}
       - name: Install SonarCloud scanner
-        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
-        shell: powershell
-        run: |
-          New-Item -Path .\.sonar\scanner -ItemType Directory
-          dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
+        run: dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
       - name: Build and analyze
         env:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
           SONAR_TOKEN: ${{ secrets.sonarToken }}
-        shell: powershell
         run: |
           .\.sonar\scanner\dotnet-sonarscanner begin /k:"${{ inputs.dotnetSonarProjectKey }}" /o:"${{ inputs.dotnetSonarOrganization }}" /d:sonar.login="${{ secrets.sonarToken }}" /d:sonar.host.url="https://sonarcloud.io"
           dotnet clean
