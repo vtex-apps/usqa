@@ -586,7 +586,9 @@ jobs:
         with:
           dotnet-version: ${{ inputs.dotnetVersion }}
       - name: Install SonarCloud scanner
-        run: dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
+        run: |
+          dotnet tool update dotnet-sonarscanner
+          find / -name dotnet-sonarscanner
       - name: Build and analyze
         env:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
