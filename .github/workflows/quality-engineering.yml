@@ -515,10 +515,14 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: ${{ inputs.dotnetVersion }}
-      - name: Install dependencies
-        run: dotnet restore
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
+      - name: Lint .Net
+        uses: wearerequired/lint-action@v2
+        with:
+          dotnet_format: true
+#       - name: Install dependencies
+#         run: dotnet restore
+#       - name: Build
+#         run: dotnet build --configuration Release --no-restore
 
   # -----------------------------------------------------------------------------------------
   # Job to run Tests (.Net)
