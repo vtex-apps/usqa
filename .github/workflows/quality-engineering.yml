@@ -385,7 +385,7 @@ jobs:
     needs: [safeCheck, nodeLint, nodeTest, reactTest]
     timeout-minutes: 5
     concurrency:
-      group: nodeSonar-${{ github.actor }}
+      group: ${{ github.workflow }}-${{ github.ref }}
     steps:
       - name: 'Trusted checkout'
         uses: actions/checkout@v3
@@ -567,7 +567,7 @@ jobs:
     timeout-minutes: 10
     needs: [safeCheck, dotnetLint, dotnetTest]
     concurrency:
-      group: dotnetSonar-${{ github.actor }}
+      group: ${{ github.workflow }}-${{ github.ref }}
     steps:
       - name: Set up JDK 11
         uses: actions/setup-java@v1
