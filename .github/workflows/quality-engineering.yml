@@ -600,7 +600,6 @@ jobs:
           dotnet clean
           dotnet build --configuration Release --no-restore &>/dev/null || echo "We got some error when building"
           dotnet-sonarscanner end /d:sonar.login="${{ secrets.sonarToken }}"
-          find / -name "report-task.txt"
       - name: 'Process SonarCloud results'
         working-directory: .sonarqube/out/.sonar
         run: |
