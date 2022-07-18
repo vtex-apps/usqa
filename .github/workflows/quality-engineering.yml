@@ -518,9 +518,7 @@ jobs:
       - name: Install dotnet-format
         run: dotnet tool install -g dotnet-format
       - name: Lint .Net
-        uses: wearerequired/lint-action@v2
-        with:
-          dotnet_format: true
+        run: dotnet format --verify-no-changes
 #       - name: Install dependencies
 #         run: dotnet restore
 #       - name: Build
