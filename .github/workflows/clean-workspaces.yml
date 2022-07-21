@@ -1,4 +1,4 @@
-name: '[SCH] Maintenance'
+name: '[QE] Maintenance'
 
 on:
   workflow_dispatch:
