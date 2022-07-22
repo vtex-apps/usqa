@@ -239,7 +239,7 @@ jobs:
       - name: 'Lint JSON'
         run: |
           FAILED=0
-          for json in $(find -name "*.json" -not -path "*/node_modules/*" -not -path "./dotnet*"); do
+          find -name "*.json" -not -path "*/node_modules/*" -not -path "./dotnet*" | while read json; do
             ERROR=0
             jq . -cM "$json" 1>/dev/null 2>error || ERROR=1
             if [[ $ERROR -eq 0 ]]; then
@@ -514,7 +514,7 @@ jobs:
       - name: 'Lint JSON'
         run: |
           FAILED=0
-          for json in $(find -name "*.json" -not -path "./react*" -not -path "./node*"); do
+          find -name "*.json" -not -path "./react*" -not -path "./node*" | while read json; do
             ERROR=0
             jq . -cM "$json" 1>/dev/null 2>error || ERROR=1
             if [[ $ERROR -eq 0 ]]; then
