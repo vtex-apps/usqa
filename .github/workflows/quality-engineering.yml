@@ -239,9 +239,9 @@ jobs:
       - name: 'Lint JSON'
         run: |
           FAILED=0
-          for json in $(find -name "*.json" -not -path "*/node_modules/*"); do
+          find -name "*.json" -not -path "*/node_modules/*" -not -path "./dotnet*" | while read json; do
             ERROR=0
-            jq . -cM $json 1>/dev/null 2>error || ERROR=1
+            jq . -cM "$json" 1>/dev/null 2>error || ERROR=1
             if [[ $ERROR -eq 0 ]]; then
               echo "OK: $json"
             else
@@ -511,6 +511,28 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - name: 'Lint JSON'
+        run: |
+          FAILED=0
+          find -name "*.json" -not -path "./react*" -not -path "./node*" | while read json; do
+            ERROR=0
+            jq . -cM "$json" 1>/dev/null 2>error || ERROR=1
+            if [[ $ERROR -eq 0 ]]; then
+              echo "OK: $json"
+            else
+              FAILED=1
+              echo "ERROR: $json"
+              MSG=$(sed 's/\(.*\) at line \(.*\), column \(.*\)$/\1;\2;\3/' error)
+              F="$json"
+              E="$(echo $MSG | cut -d ';' -f1)"
+              L=$(echo $MSG | cut -d ';' -f2)
+              C=$(echo $MSG | cut -d ';' -f3)
+              echo "::error file=$F,line=$L,col=$C::$E"
+            fi
+          done
+          if [[ $FAILED -eq 1 ]]; then 
+            exit 1; 
+          fi
       - name: Setup .Net
         uses: actions/setup-dotnet@v1
         with:
