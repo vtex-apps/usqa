@@ -167,7 +167,7 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           fetch-depth: 0
       # There's a bug on changed-files actions, so let's do it in three steps
-      # -- First, let's take a look on the overal
+      # -- First, let's take a look on the overall
       - name: 'Get all changed files'
         id: a
         uses: tj-actions/changed-files@v22.2
