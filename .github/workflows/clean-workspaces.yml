@@ -34,7 +34,7 @@ jobs:
           rm -rf .git
           yarn cypress info
         working-directory: cy-runner
-      - name: 'Run Cy-Runner to login'
+      - name: 'Run Cy-Runner clean edition'
         run: |
           mv ../cy-runner.js .
           node cy-runner.js
