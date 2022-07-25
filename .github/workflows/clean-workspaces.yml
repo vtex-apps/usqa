@@ -26,6 +26,7 @@ jobs:
         with:
           node-version: 16
           cache: yarn
+          cache-dependency-path: cy-runner/yarn.lock
         continue-on-error: true
       - name: 'Install Cy-Runner'
         run: |
