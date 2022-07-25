@@ -115,7 +115,7 @@ on:
       # Secrets for GitHub token, SonarCloud token and Cypress JSON
       # -----------------------------------------------------------------------------------------
       githubToken:
-        description: 'A token to access GitHub staff'
+        description: 'A token to access GitHub'
         required: false
       sonarToken:
         description: 'A token to have access to SonarCloud'
@@ -186,6 +186,7 @@ jobs:
         with:
           files: |
             messages/en.json
+            messages/en-us.json
       # -- Third, let's merge it and give the final result
       - name: 'Do we have substantial changes?'
         id: changed-files
