@@ -10,7 +10,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: 'Test beta version of workflow'
-        uses: vtex/action-toolbelt@v1
+        uses: vtex/action-toolbelt@main
         with:
             account: 'Account test'
             appKey: '123456'
