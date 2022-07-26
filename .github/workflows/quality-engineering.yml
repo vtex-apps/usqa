@@ -169,7 +169,7 @@ jobs:
       # There's a bug on changed-files actions, so let's do it in three steps
       # -- First, let's take a look on the overall
       - name: 'Get all changed files'
-        id: changed-files
+        id: a
         uses: tj-actions/changed-files@v22.2
         with:
           files: |
@@ -179,23 +179,25 @@ jobs:
             .github/**
             docs/**
             messages/**
-#       # -- Second, let's take a look only on extra files
-#       - name: 'Get changes on extra files'
-#         id: b
-#         uses: tj-actions/changed-files@v22.2
-#         with:
-#           files: |
-#             messages/en.json
-#             messages/en-us.json
-#       # -- Third, let's merge it and give the final result
-#       - name: 'Do we have substantial changes?'
-#         id: changed-files
-#         run: |
-#           CHANGES=false
-#           [[ ${{ steps.a.outputs.any_modified }} == 'true' ]] && CHANGES=true
-#           [[ ${{ steps.b.outputs.any_modified }} == 'true' ]] && CHANGES=true
-#           echo "::set-output name=any_modified::$CHANGES"
-#           echo $CHANGES
+      # -- Second, let's take a look only on extra files
+      - name: 'Get changes on extra files'
+        id: b
+        uses: tj-actions/changed-files@v22.2
+        with:
+          files: |
+            messages/en.json
+            messages/en-us.json
+      # -- Third, let's merge it and give the final result
+      - name: 'Do we have substantial changes?'
+        id: changed-files
+        run: |
+          CHANGES=false
+          A=${{ steps.a.outputs.any_modified }}
+          B=${{ steps.b.outputs.any_modified }}
+          [[ -n $A ]] && [[ $A == true ]] && CHANGE=true
+          [[ -n $B ]] && [[ $B == true ]] && CHANGE=true
+          echo "::set-output name=any_modified::$CHANGES"
+          echo $CHANGES        
       - name: Debug
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
         timeout-minutes: 5
