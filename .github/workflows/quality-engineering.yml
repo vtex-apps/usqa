@@ -194,8 +194,8 @@ jobs:
           CHANGES=false
           A=${{ steps.a.outputs.any_modified }}
           B=${{ steps.b.outputs.any_modified }}
-          [[ -n $A ]] && [[ $A == true ]] && CHANGE=true
-          [[ -n $B ]] && [[ $B == true ]] && CHANGE=true
+          [[ -n $A ]] && [[ $A == true ]] && CHANGES=true
+          [[ -n $B ]] && [[ $B == true ]] && CHANGES=true
           echo "::set-output name=any_modified::$CHANGES"
           echo $CHANGES        
       - name: Debug
