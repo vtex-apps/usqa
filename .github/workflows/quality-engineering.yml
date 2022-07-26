@@ -115,7 +115,7 @@ on:
       # Secrets for GitHub token, SonarCloud token and Cypress JSON
       # -----------------------------------------------------------------------------------------
       githubToken:
-        description: 'A token to access GitHub staff'
+        description: 'A token to access GitHub'
         required: false
       sonarToken:
         description: 'A token to have access to SonarCloud'
@@ -166,19 +166,38 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           fetch-depth: 0
-      - name: 'Get changed files'
-        id: changed-files
+      # There's a bug on changed-files actions, so let's do it in three steps
+      # -- First, let's take a look on the overall
+      - name: 'Get all changed files'
+        id: a
         uses: tj-actions/changed-files@v22.2
         with:
           files: |
-            **/**
+            **/*.*
           files_ignore: |
-            CHANGELOG.md
+            **/*.md
             .github/**
             docs/**
             messages/**
+      # -- Second, let's take a look only on extra files
+      - name: 'Get changes on extra files'
+        id: b
+        uses: tj-actions/changed-files@v22.2
+        with:
+          files: |
+            messages/en.json
+            messages/en-us.json
+      # -- Third, let's merge it and give the final result
       - name: 'Do we have substantial changes?'
-        run: echo ${{ steps.changed-files.outputs.any_modified }}
+        id: changed-files
+        run: |
+          CHANGES=false
+          A=${{ steps.a.outputs.any_modified }}
+          B=${{ steps.b.outputs.any_modified }}
+          [[ -n $A ]] && [[ $A == true ]] && CHANGES=true
+          [[ -n $B ]] && [[ $B == true ]] && CHANGES=true
+          echo "::set-output name=any_modified::$CHANGES"
+          echo $CHANGES        
       - name: Debug
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
         timeout-minutes: 5
