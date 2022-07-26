@@ -12,7 +12,8 @@ jobs:
       - name: 'Test beta version of workflow'
         uses: vtex/action-toolbelt@main
         with:
-            account: 'Account test'
-            appKey: '123456'
-            appToken: '321654'
-            workspace: ${{ secrets.TEST }}
+            account: Account test
+            appKey: 123456
+            appToken: 321654
+            workspace: master
+            branch: qe/cypress
