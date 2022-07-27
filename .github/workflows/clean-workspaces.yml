@@ -23,7 +23,8 @@ jobs:
 
       - name: Clean dirty workspaces
         run: |
-          echo y | vtex-e2e workspace delete $(vtex-e2e workspace ls | grep -E [[:digit:]]{7} | awk '{print $1}' | xargs)
+          DIRTY=$(vtex-e2e workspace ls | grep -E [[:digit:]]{7} | awk '{print $1}' | xargs)
+          [[ -n $DIRTY ]] && echo y | vtex-e2e workspace delete $DIRTY || "Ohay, Nothing to clean!"
 
       - name: Logout
         run: |
