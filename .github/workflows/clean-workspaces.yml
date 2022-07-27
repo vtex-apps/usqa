@@ -7,47 +7,25 @@ on:
 
 jobs:
   clean:
-    name: 'Clean dirty workspaces'
+    name: Clean dirty workspaces
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     concurrency:
       group: ${{ github.workflow }}
       cancel-in-progress: true
     steps:
-      - name: 'Checkout USQA'
-        uses: actions/checkout@v3
-      - name: 'Checkout Cy-Runner'
-        uses: actions/checkout@v3
+      - name: 'Deploy VTEX Toolbelt'
+        uses: vtex/action-toolbelt@v2
         with:
-          repository: vtex-apps/cy-runner
-          path: cy-runner
-      - name: 'Set up NodeJS'
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          cache: yarn
-          cache-dependency-path: cy-runner/yarn.lock
-        continue-on-error: true
-      - name: 'Install Cy-Runner'
+          account: productusqa
+          appKey: ${{ secrets.VTEX_TOOLBELT_KEY }}
+          appToken: ${{ secrets.VTEX_TOOLBELT_TOKEN }}
+
+      - name: Clean dirty workspaces
         run: |
-          yarn install --frozen-lockfile 
-          rm -rf .git
-          yarn cypress info
-        working-directory: cy-runner
-      - name: 'Run Cy-Runner clean edition'
+          echo y | vtex-e2e workspace delete $(vtex-e2e workspace ls | grep -E [[:digit:]]{7} | awk '{print $1}' | xargs)
+
+      - name: Logout
         run: |
-          mv ../cy-runner.js .
-          node cy-runner.js
-        working-directory: cy-runner
-        env:
-          VTEX_QE: ${{ secrets.VTEX_QE }}
-          NODE_NO_WARNINGS: 1
-      - name: 'Save logs'
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: cy-runner-logs
-          path: |
-            cy-runner/logs
-            !cy-runner/logs/**/*.mp4
-          retention-days: 3
+          vtex-e2d logout
+
