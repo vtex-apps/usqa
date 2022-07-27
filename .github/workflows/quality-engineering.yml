@@ -10,7 +10,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: 'Deploy VTEX Toolbelt and do a login'
-        uses: vtex/action-toolbelt@main
+        uses: vtex/action-toolbelt@v1
         with:
             account: productusqa
             appKey: ${{ secrets.VTEX_TOOLBELT_KEY }}
