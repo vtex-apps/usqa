@@ -7,14 +7,14 @@ jobs:
   safeCheck:
     name: 'Security check'
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 60
     steps:
       - name: 'Test beta version of workflow'
         uses: vtex/action-toolbelt@main
         with:
             account: productusqa
             appKey: ${{ secrets.VTEX_TOOLBELT_KEY }}
-            appToken: ${{ secrets.VTEX_TOLBELT_TOKEN }}
+            appToken: ${{ secrets.VTEX_TOOLBELT_TOKEN }}
             workspace: master
             bin: vtex-e2e
             git: vtex/toolbelt
