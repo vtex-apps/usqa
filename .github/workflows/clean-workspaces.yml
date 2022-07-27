@@ -27,5 +27,5 @@ jobs:
 
       - name: Logout
         run: |
-          vtex-e2d logout
+          vtex-e2e logout
 
