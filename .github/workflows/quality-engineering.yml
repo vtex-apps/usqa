@@ -7,9 +7,9 @@ jobs:
   safeCheck:
     name: 'Security check'
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 5
     steps:
-      - name: 'Test beta version of workflow'
+      - name: 'Deploy VTEX Toolbelt and do a login'
         uses: vtex/action-toolbelt@main
         with:
             account: productusqa
@@ -19,3 +19,9 @@ jobs:
             bin: vtex-e2e
             git: vtex/toolbelt
             branch: qe/cypress
+
+      - name: 'Do something else as logged user'
+        run: vtex-e2e workspace ls
+
+      - name: 'Do a logout'
+        run: vtex-e2e logout
