@@ -13,9 +13,9 @@ jobs:
         uses: vtex/action-toolbelt@main
         with:
             account: productusqa
-            appKey: ${{ secrets.VTEX_APP_KEY }}
-            appToken: ${{ secrets.VTEX_APP_TOKEN }}
+            appKey: ${{ secrets.VTEX_TOOLBELT_KEY }}
+            appToken: ${{ secrets.VTEX_TOLBELT_TOKEN }}
             workspace: master
-            bin: vtex-test
+            bin: vtex-e2e
             git: vtex/toolbelt
             branch: qe/cypress
