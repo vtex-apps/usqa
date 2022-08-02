@@ -491,7 +491,7 @@ jobs:
             GATE_API='https://sonarcloud.io/api/qualitygates'
             while [[ $GATE_STATUS != 'OK' && $TRY -le $MAX_TRY ]]; do
               echo -n "Checking Quality Gate info ($TRY of $MAX_TRY)... "
-              sleep 5
+              sleep 10
               GATE_STATUS=$(curl -s -u $SONAR_TOKEN: "$GATE_API/project_status?analysisId=${ANALISYS_ID}" | jq -r .projectStatus.status)
               echo "$GATE_STATUS."
              TRY=$(( $TRY + 1 ))
