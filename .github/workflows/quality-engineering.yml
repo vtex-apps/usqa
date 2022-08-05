@@ -404,7 +404,7 @@ jobs:
     needs: [safeCheck, nodeLint, nodeTest, reactTest]
     timeout-minutes: 5
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-node
+      group: ${{ github.workflow }}-${{ github.ref }}-nodejs
     steps:
       - name: 'Trusted checkout'
         uses: actions/checkout@v3
