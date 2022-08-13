@@ -172,7 +172,6 @@ jobs:
         uses: tj-actions/changed-files@v25
         if: ( github.event.pull_request.head.repo.fork == false )
         with:
-          json: true
           files: |
             **/*.*
           files_ignore: |
@@ -186,7 +185,6 @@ jobs:
         uses: tj-actions/changed-files@v25
         if: ( github.event.pull_request.head.repo.fork == false )
         with:
-          json: true
           files: |
             messages/en.json
             messages/en-us.json
