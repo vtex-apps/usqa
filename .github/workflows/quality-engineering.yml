@@ -199,7 +199,8 @@ jobs:
           B=${{ steps.b.outputs.any_modified }}
           [[ -n $A ]] && [[ $A == true ]] && CHANGES=true
           [[ -n $B ]] && [[ $B == true ]] && CHANGES=true
-          [[ github.event.pull_request.head.repo.fork == true ]] && CHANGES=true
+          # If from fork, always run full steps
+          [[ "${{ github.event.pull_request.head.repo.fork }}" == "true" ]] && CHANGES=true
           echo "::set-output name=any_modified::$CHANGES"
           echo $CHANGES        
       - name: Debug
