@@ -170,7 +170,7 @@ jobs:
       # -- First, let's take a look on the overall
       - name: 'Get all changed files'
         id: a
-        uses: tj-actions/changed-files@v22.2
+        uses: tj-actions/changed-files@v23
         with:
           files: |
             **/*.*
@@ -183,7 +183,7 @@ jobs:
       # -- Second, let's take a look only on extra files
       - name: 'Get changes on extra files'
         id: b
-        uses: tj-actions/changed-files@v22.2
+        uses: tj-actions/changed-files@v23
         with:
           files: |
             messages/en.json
