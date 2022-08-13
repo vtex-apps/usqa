@@ -158,19 +158,19 @@ jobs:
         uses: actions/checkout@v3
         if: ( github.event.pull_request.head.repo.fork == false )
         with:
-          fetch-depth: 0
+          fetch-depth: 2
       - name: 'Untrusted checkout'
         uses: actions/checkout@v3
         if: ( github.event.pull_request.head.repo.fork == true )
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
-          fetch-depth: 0
+          fetch-depth: 2
       # There's a bug on changed-files actions, so let's do it in three steps
       # -- First, let's take a look on the overall
       - name: 'Get all changed files'
         id: a
-        uses: tj-actions/changed-files@v23
+        uses: tj-actions/changed-files@v25
         with:
           files: |
             **/*.*
@@ -179,16 +179,18 @@ jobs:
             .github/**
             docs/**
             messages/**
-          use_fork_point: "${{ github.event.pull_request.head.repo.fork }}"
+          use_fork_point: ${{ github.event.pull_request.head.repo.fork }}
+          json: true
       # -- Second, let's take a look only on extra files
       - name: 'Get changes on extra files'
         id: b
-        uses: tj-actions/changed-files@v23
+        uses: tj-actions/changed-files@v25
         with:
           files: |
             messages/en.json
             messages/en-us.json
-          use_fork_point: "${{ github.event.pull_request.head.repo.fork }}"
+          use_fork_point: ${{ github.event.pull_request.head.repo.fork }}
+          json: true
       # -- Third, let's merge it and give the final result
       - name: 'Do we have substantial changes?'
         id: changed-files
