@@ -184,7 +184,7 @@ jobs:
       # -- Second, let's take a look only on extra files
       - name: 'Get changes on extra files'
         id: b
-        uses: tj-actions/changed-files@v23
+        uses: tj-actions/changed-files@v25
         with:
           files: |
             messages/en.json
