@@ -179,6 +179,7 @@ jobs:
             .github/**
             docs/**
             messages/**
+          use_fork_point: "${{ github.event.pull_request.head.repo.fork }}"
       # -- Second, let's take a look only on extra files
       - name: 'Get changes on extra files'
         id: b
@@ -187,6 +188,7 @@ jobs:
           files: |
             messages/en.json
             messages/en-us.json
+          use_fork_point: "${{ github.event.pull_request.head.repo.fork }}"
       # -- Third, let's merge it and give the final result
       - name: 'Do we have substantial changes?'
         id: changed-files
