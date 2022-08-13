@@ -165,13 +165,14 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
-          fetch-depth: 0
       # There's a bug on changed-files actions, so let's do it in three steps
       # -- First, let's take a look on the overall
       - name: 'Get all changed files'
         id: a
         uses: tj-actions/changed-files@v25
+        if: ( github.event.pull_request.head.repo.fork == false )
         with:
+          json: true
           files: |
             **/*.*
           files_ignore: |
@@ -179,18 +180,16 @@ jobs:
             .github/**
             docs/**
             messages/**
-          since_last_remote_commit: ${{ github.event.pull_request.head.repo.fork }}
-          json: true
       # -- Second, let's take a look only on extra files
       - name: 'Get changes on extra files'
         id: b
         uses: tj-actions/changed-files@v25
+        if: ( github.event.pull_request.head.repo.fork == false )
         with:
+          json: true
           files: |
             messages/en.json
             messages/en-us.json
-          since_last_remote_commit: ${{ github.event.pull_request.head.repo.fork }}
-          json: true
       # -- Third, let's merge it and give the final result
       - name: 'Do we have substantial changes?'
         id: changed-files
@@ -200,6 +199,7 @@ jobs:
           B=${{ steps.b.outputs.any_modified }}
           [[ -n $A ]] && [[ $A == true ]] && CHANGES=true
           [[ -n $B ]] && [[ $B == true ]] && CHANGES=true
+          [[ github.event.pull_request.head.repo.fork == true ]] && CHANGES=true
           echo "::set-output name=any_modified::$CHANGES"
           echo $CHANGES        
       - name: Debug
