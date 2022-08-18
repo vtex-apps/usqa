@@ -35,7 +35,7 @@ jobs:
 ```
 
 ## Using it on PULL REQUEST events
-We know that Cypress can take time to run, so why run it every time even on only some documentation or translation other than English was added? Thinking on that this reusable workflow identifies the change and if we don't have substantial ones to justify trigger Cypress tests, Cypress will skip them and ge approved in less than five seconds.
+We know that Cypress can take time to run, so why run it every time even when only documentation or translation other than English was added or changed? Thinking on that this reusable workflow identifies the change and if we don't have substantial ones to justify trigger Cypress tests, Cypress will skip them and ge approved in **less than five seconds**.
 
 Suggested file name: `.github/workflows/qe-pull-request.yml`
 
