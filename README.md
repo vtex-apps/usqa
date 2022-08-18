@@ -67,6 +67,8 @@ jobs:
 ```
 
 ## Using it on PULL REQUEST TARGET events
+Because we can trust everyone in the wolrd, receive pull requests from forks can be dangerous if you trigger workflows without taking a look on the code. Thinking on that, this reusable workflow has a check on the security step that allows run workflow from forks only if someone inside add a label `safe to test`. Until someone does this, the test will fail on the security check phase.
+
 Suggested file name: `.github/workflows/qe-pull-request-target.yml`
 
 ```yaml
