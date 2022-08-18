@@ -35,6 +35,8 @@ jobs:
 ```
 
 ## Using it on PULL REQUEST events
+We know that Cypress can take time to run, so why run it every time even on only some documentation or translation other than English was added? Thinking on that this reusable workflow identifies the change and if we don't have substantial ones to justify trigger Cypress tests, Cypress will skip them and ge approved in less than five seconds.
+
 Suggested file name: `.github/workflows/qe-pull-request.yml`
 
 ```yaml
@@ -67,7 +69,7 @@ jobs:
 ```
 
 ## Using it on PULL REQUEST TARGET events
-Because we can trust everyone in the wolrd, receive pull requests from forks can be dangerous if you trigger workflows without taking a look on the code. Thinking on that, this reusable workflow has a check on the security step that allows run workflow from forks only if someone inside add a label `safe to test`. Until someone does this, the test will fail on the security check phase.
+Because we can't trust everyone in the digital wolrd, receive pull requests from forks can be dangerous if you trigger workflows without taking a look on the code. Thinking on that, this reusable workflow has a check on the security step that allows run workflow from forks only if someone inside add a label `safe to test`. Until someone does this, the test will fail on the security check phase.
 
 Suggested file name: `.github/workflows/qe-pull-request-target.yml`
 
@@ -102,6 +104,8 @@ jobs:
 ```
 
 ## Using it on SCHEDULE events
+The schedule events has the ability to skip all other dependent tasks and run only Cypress.
+
 Suggested file name: `.github/workflows/qe-schedule.yml`
 
 ```yaml
