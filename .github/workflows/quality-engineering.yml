@@ -742,7 +742,8 @@ jobs:
           needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
-        run: yarn cy-r
+        run: node cy-runner
+        working-directory: cy-runner
         env:
           VTEX_QE: ${{ secrets.cypressJSON }}
           NODE_NO_WARNINGS: 1
