@@ -15,7 +15,7 @@ jobs:
       cancel-in-progress: true
     steps:
       - name: 'Deploy VTEX Toolbelt'
-        uses: vtex/action-toolbelt@improve-vtex-install
+        uses: vtex/action-toolbelt@v4
         with:
           account: productusqa
           appKey: ${{ secrets.VTEX_TOOLBELT_KEY }}
@@ -24,7 +24,7 @@ jobs:
       - name: Clean dirty workspaces
         run: |
           DIRTY=$(vtex workspace ls | grep -E [[:digit:]]{7} | awk '{print $1}' | xargs)
-          [[ -n $DIRTY ]] && echo y | vtex workspace delete $DIRTY || echo "Ohay, Nothing to clean!"
+          [[ -n $DIRTY ]] && vtex workspace delete $DIRTY || echo "Ohay, Nothing to clean!"
 
       - name: Logout
         run: |
