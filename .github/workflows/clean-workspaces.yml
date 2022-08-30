@@ -1,0 +1,52 @@
+name: '[QE] Maintenance'
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '00 00 * * SUN'
+
+jobs:
+  clean:
+    name: 'Clean dirty workspaces'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: ${{ github.workflow }}
+      cancel-in-progress: true
+    steps:
+      - name: 'Checkout USQA'
+        uses: actions/checkout@v3
+      - name: 'Checkout Cy-Runner'
+        uses: actions/checkout@v3
+        with:
+          repository: vtex-apps/cy-runner
+          path: cy-runner
+      - name: 'Set up NodeJS'
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: yarn
+        continue-on-error: true
+      - name: 'Install Cy-Runner'
+        run: |
+          yarn install --frozen-lockfile 
+          rm -rf .git
+          yarn cypress info
+        working-directory: cy-runner
+      - name: 'Run Cy-Runner to login'
+        run: |
+          mv ../cy-runner.js .
+          node cy-runner.js
+        working-directory: cy-runner
+        env:
+          VTEX_QE: ${{ secrets.VTEX_QE }}
+          NODE_NO_WARNINGS: 1
+      - name: 'Save logs'
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: cy-runner-logs
+          path: |
+            cy-runner/logs
+            !cy-runner/logs/**/*.mp4
+          retention-days: 3
