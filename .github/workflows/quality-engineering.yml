@@ -717,13 +717,13 @@ jobs:
           || github.event_name == 'workflow_dispatch'
         run: |
           echo "==> Installing root packages..."
-          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+          [[ -f 'package.json' ]] && yarn install --frozen-lockfile --prod
           for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
             # checkout-ui-custom has a bug on package.json installation, so let's skip it
             if [[ $DIR != 'checkout-ui-custom' ]]; then
               echo "==> Installing $DIR packages..."
               cd "$DIR"
-              yarn install --frozen-lockfile
+              yarn install --frozen-lockfile --prod
               cd -
             fi
           done
@@ -733,10 +733,18 @@ jobs:
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
         run: |
-          yarn install --frozen-lockfile 
+          yarn install --frozen-lockfile --prod
           rm -rf .git
           yarn cypress info
         working-directory: cy-runner
+        
+      - name: 'Login on VTEX Toolbelt'
+        uses: vtex/action-toolbelt@v5
+        with:
+          account: productusqa
+          appKey: ${{ secrets.VTEX_TOOLBELT_KEY }}
+          appToken: ${{ secrets.VTEX_TOOLBELT_TOKEN }}       
+        
       - name: 'Run Cy-Runner'
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
@@ -756,3 +764,7 @@ jobs:
             cy-runner/logs
             !cy-runner/logs/**/*.mp4
           retention-days: 3
+          
+      - name: 'Logout from VTEX Toolbelt'
+        run: vtex logout
+        continue-on-error: true
