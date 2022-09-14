@@ -727,18 +727,17 @@ jobs:
               cd -
             fi
           done
-      - name: 'Install Cy-Runner'
+      - name: 'Check Cypress version'
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
         run: |
-          yarn install --frozen-lockfile --prod
           rm -rf .git
           yarn cypress info
         working-directory: cy-runner
         
-      - name: 'Login on VTEX Toolbelt'
+      - name: 'Set up VTEX Toolbelt'
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
@@ -768,11 +767,3 @@ jobs:
             cy-runner/logs
             !cy-runner/logs/**/*.mp4
           retention-days: 3
-          
-      - name: 'Logout from VTEX Toolbelt'
-        if: |
-          needs.safeCheck.outputs.substantialChanges == 'true'
-          || github.event_name == 'schedule'
-          || github.event_name == 'workflow_dispatch'
-        run: vtex logout
-        continue-on-error: true
