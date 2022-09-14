@@ -739,6 +739,10 @@ jobs:
         working-directory: cy-runner
         
       - name: 'Login on VTEX Toolbelt'
+        if: |
+          needs.safeCheck.outputs.substantialChanges == 'true'
+          || github.event_name == 'schedule'
+          || github.event_name == 'workflow_dispatch'
         uses: vtex/action-toolbelt@v5
         with:
           account: productusqa
@@ -766,5 +770,9 @@ jobs:
           retention-days: 3
           
       - name: 'Logout from VTEX Toolbelt'
+        if: |
+          needs.safeCheck.outputs.substantialChanges == 'true'
+          || github.event_name == 'schedule'
+          || github.event_name == 'workflow_dispatch'
         run: vtex logout
         continue-on-error: true
