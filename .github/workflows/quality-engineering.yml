@@ -243,7 +243,7 @@ jobs:
   # Job to run Lint (Node.js)
   # -----------------------------------------------------------------------------------------
   nodeLint:
-    name: 'Lint / Node.js'
+    name: 'Lint Node'
     if: ${{ inputs.nodeLint || inputs.nodeSonar || inputs.nodeTest}}
     runs-on: ubuntu-latest
     needs: [safeCheck]
@@ -309,7 +309,7 @@ jobs:
   # Job to run tests (Node.js on node folder)
   # -----------------------------------------------------------------------------------------
   nodeTest:
-    name: 'Unit test / Node'
+    name: 'Test node code'
     if: ${{ inputs.nodeTest }}
     runs-on: ubuntu-latest
     needs: [safeCheck]
@@ -351,7 +351,7 @@ jobs:
   # Job to run tests (Node.js on react folder)
   # -----------------------------------------------------------------------------------------
   reactTest:
-    name: 'Unit test / React'
+    name: 'Test react code'
     if: ${{ inputs.reactTest }}
     runs-on: ubuntu-latest
     needs: [safeCheck]
@@ -393,7 +393,7 @@ jobs:
   # Job to run SonarCloud (Node.js)
   # -----------------------------------------------------------------------------------------
   nodeSonar:
-    name: 'SonarCloud / Node.js'
+    name: 'Scan Node.js'
     if: |
       always()
       && ( inputs.nodeSonar ) 
@@ -518,7 +518,7 @@ jobs:
   # Job to run Lint (.Net)
   # -----------------------------------------------------------------------------------------
   dotnetLint:
-    name: 'Lint / .Net'
+    name: 'Lint .Net'
     if: ( inputs.dotnetLint ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
     runs-on: ubuntu-latest
     needs: [safeCheck]
@@ -569,7 +569,7 @@ jobs:
   # Job to run Tests (.Net)
   # -----------------------------------------------------------------------------------------
   dotnetTest:
-    name: 'Unit test / .Net'
+    name: 'Test .Net'
     if: ( inputs.dotnetTest ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -599,7 +599,7 @@ jobs:
   # Job to run SonarCloud (.Net)
   # -----------------------------------------------------------------------------------------
   dotnetSonar:
-    name: 'SonarCloud / .Net'
+    name: 'Scan .Net'
     if: |
       always()
       && ( inputs.dotnetSonar ) 
@@ -664,7 +664,7 @@ jobs:
   # Job to run Cypress
   # -----------------------------------------------------------------------------------------
   cypress:
-    name: 'Cypress'
+    name: 'E2E'
     if: |
       always()
       && ( inputs.cypress ) 
