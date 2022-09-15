@@ -102,7 +102,7 @@ on:
       cyRunnerBranch:
         description: 'Which branch use in Cypress-Runner?'
         type: string
-        default: 'main'
+        default: 'release/v2'
         required: false
       cyRunnerTimeOut:
         description: 'What is the time out for the Cypress-Runner job?'
@@ -717,26 +717,37 @@ jobs:
           || github.event_name == 'workflow_dispatch'
         run: |
           echo "==> Installing root packages..."
-          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+          [[ -f 'package.json' ]] && yarn install --frozen-lockfile --prod
           for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
             # checkout-ui-custom has a bug on package.json installation, so let's skip it
             if [[ $DIR != 'checkout-ui-custom' ]]; then
               echo "==> Installing $DIR packages..."
               cd "$DIR"
-              yarn install --frozen-lockfile
+              yarn install --frozen-lockfile --prod
               cd -
             fi
           done
-      - name: 'Install Cy-Runner'
+      - name: 'Check Cypress version'
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
         run: |
-          yarn install --frozen-lockfile 
           rm -rf .git
           yarn cypress info
         working-directory: cy-runner
+        
+      - name: 'Set up VTEX Toolbelt'
+        if: |
+          needs.safeCheck.outputs.substantialChanges == 'true'
+          || github.event_name == 'schedule'
+          || github.event_name == 'workflow_dispatch'
+        uses: vtex/action-toolbelt@v5
+        with:
+          account: productusqa
+          appKey: ${{ fromJson(secrets.cypressJSON).vtex.apiKey }}
+          appToken: ${{ fromJson(secrets.cypressJSON).vtex.apiToken }}
+        
       - name: 'Run Cy-Runner'
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
