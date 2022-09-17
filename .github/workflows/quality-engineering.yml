@@ -753,8 +753,8 @@ jobs:
         uses: vtex/action-toolbelt@v5
         with:
           account: productusqa
-          appKey: ${{ secrets.apiKeyProductUSQA }}
-          appToken: ${{ secrets.apiTokenProductUSQA }}
+          appKey: ${{ secrets.PRODUCTUSQA_VTEXAPPKEY }}
+          appToken: ${{ secrets.PRODUCTUSQA_VTEXAPPTOKEN }}
       - name: 'Lock workspace'
         id: lock
         if: |
