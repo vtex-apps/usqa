@@ -753,7 +753,7 @@ jobs:
         uses: vtex/action-toolbelt@v6
         with:
           account: productusqa
-          jsonFile: .VTEX_QE.json
+          jsonFile: cy-runner/.VTEX_QE.json
       - name: 'Lock workspace'
         id: lock
         if: |
