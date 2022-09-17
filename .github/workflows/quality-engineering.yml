@@ -736,6 +736,15 @@ jobs:
           rm -rf .git
           yarn cypress info
         working-directory: cy-runner
+      - name: 'Manipulate secrets'
+        if: |
+          needs.safeCheck.outputs.substantialChanges == 'true'
+          || github.event_name == 'schedule'
+          || github.event_name == 'workflow_dispatch'
+        run: echo $(VTEX_QE) > .VTEX_QE.json
+        env: 
+          VTEX_QE: ${{ secrets.cypressJSON }}        
+        working-directory: cy-runner
       - name: 'Set up VTEX Toolbelt'
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
@@ -763,8 +772,6 @@ jobs:
             fi
           fi
           echo "::set-output name=unlock::$LOCK"
-        env:
-          VTEX_QE: ${{ secrets.cypressJSON }}
       - name: 'Run Cy-Runner'
         id: cy-runner
         if: |
@@ -778,16 +785,13 @@ jobs:
           echo "::set-output name=pr-message::$PR_MESSAGE"        
         working-directory: cy-runner
         env:
-          VTEX_QE: ${{ secrets.cypressJSON }}
           NODE_NO_WARNINGS: 1
       - name: 'Unlock workspace'
-        if: steps.lock.outputs.unlock == 'true'
+        if: always() && steps.lock.outputs.unlock == 'true'
         run: yq '.lockScript' < cy-runner.yml | node - unlock
         continue-on-error: true
-        env:
-          VTEX_QE: ${{ secrets.cypressJSON }}
       - name: Comment PR
-        if: steps.cy-runner.outputs.pr-message == 'true'
+        if: always() && steps.cy-runner.outputs.pr-message == 'true'
         uses: marocchino/sticky-pull-request-comment@v2.2.0
         with:
           recreate: true
