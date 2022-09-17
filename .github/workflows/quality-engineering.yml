@@ -784,7 +784,7 @@ jobs:
 
       - name: 'Unlock workspace'
         if: steps.lock.outputs.unlock == 'true'
-        run: yq '.lockScript' $CONFIG | node - unlock
+        run: yq '.lockScript' < cy-runner.yml | node - unlock
         continue-on-error: true
         
       - name: Comment PR
