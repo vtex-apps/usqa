@@ -736,7 +736,6 @@ jobs:
           rm -rf .git
           yarn cypress info
         working-directory: cy-runner
-        
       - name: 'Set up VTEX Toolbelt'
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
@@ -747,7 +746,6 @@ jobs:
           account: productusqa
           appKey: ${{ fromJson(secrets.cypressJSON).vtex.apiKey }}
           appToken: ${{ fromJson(secrets.cypressJSON).vtex.apiToken }}
-
       - name: 'Lock workspace'
         id: lock
         if: |
@@ -765,7 +763,8 @@ jobs:
             fi
           fi
           echo "::set-output name=unlock::$LOCK"
-
+        env:
+          VTEX_QE: ${{ secrets.cypressJSON }}
       - name: 'Run Cy-Runner'
         id: cy-runner
         if: |
@@ -781,12 +780,12 @@ jobs:
         env:
           VTEX_QE: ${{ secrets.cypressJSON }}
           NODE_NO_WARNINGS: 1
-
       - name: 'Unlock workspace'
         if: steps.lock.outputs.unlock == 'true'
         run: yq '.lockScript' < cy-runner.yml | node - unlock
         continue-on-error: true
-        
+        env:
+          VTEX_QE: ${{ secrets.cypressJSON }}
       - name: Comment PR
         if: steps.cy-runner.outputs.pr-message == 'true'
         uses: marocchino/sticky-pull-request-comment@v2.2.0
@@ -794,7 +793,6 @@ jobs:
           recreate: true
           path: _gb-decorator.txt
         continue-on-error: true
-
       - name: Save results
         uses: actions/upload-artifact@v3
         if: always()
