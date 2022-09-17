@@ -749,48 +749,50 @@ jobs:
           appToken: ${{ fromJson(secrets.cypressJSON).vtex.apiToken }}
 
       - name: 'Lock workspace'
-        if: |
-          needs.safeCheck.outputs.substantialChanges == 'true'
-          || github.event_name == 'schedule'
-          || github.event_name == 'workflow_dispatch'
-        run: |
-          YAML='cy-runner.yml'
-          if [[ -f $YAML ]]; then
-            SCRIPT = $(yq '.lockScript' $YAML)
-            if [[ $SCRIPT != 'null' ]]; then
-               yq '.lockScript' $YAML| node - lock
-            fi
-          fi
-
-      - name: 'Run Cy-Runner'
-        if: |
-          needs.safeCheck.outputs.substantialChanges == 'true'
-          || github.event_name == 'schedule'
-          || github.event_name == 'workflow_dispatch'
-        run: node cy-runner
-        working-directory: cy-runner
-        env:
-          VTEX_QE: ${{ secrets.cypressJSON }}
-          NODE_NO_WARNINGS: 1
-
-      - name: 'Unlock workspace'
-        id: gb-dec
+        id: lock
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
         run: |
           CONFIG='cy-runner.yml'
+          LOCK='false'
           if [[ -f $CONFIG ]]; then
-            SCRIPT=$(yq '.lockScript' $CONFIG)
+            SCRIPT=$(yq '.lockScript' < $CONFIG)
             if [[ $SCRIPT != 'null' ]]; then
-               yq '.lockScript' $CONFIG | node - unlock
+               LOCK='true'
+               yq '.lockScript' < $CONFIG | node - unlock
             fi
           fi
-          DEC_FILE='_gb-decorator.txt'
-          RUN_DEC='false'
-          [[ -f $DEC_FILE ]] && RUN_DEC='true'
-          echo "::set-output name=runDec::$RUN_DEC"        
+          echo "::set-output name=unlock::$LOCK"
+
+      - name: 'Run Cy-Runner'
+        id: cy-runner
+        if: |
+          needs.safeCheck.outputs.substantialChanges == 'true'
+          || github.event_name == 'schedule'
+          || github.event_name == 'workflow_dispatch'
+        run: |
+          node cy-runner
+          PR_MESSAGE='false'
+          [[ -f '_gb-decorator.txt' ]] && PR_MESSAGE='true'
+          echo "::set-output name=pr-message::$PR_MESSAGE"        
+        working-directory: cy-runner
+        env:
+          VTEX_QE: ${{ secrets.cypressJSON }}
+          NODE_NO_WARNINGS: 1
+
+      - name: 'Unlock workspace'
+        if: steps.lock.outputs.unlock == 'true'
+        run: yq '.lockScript' $CONFIG | node - unlock
+        continue-on-error: true
+        
+      - name: Comment PR
+        if: steps.cy-runner.outputs.pr-message == 'true'
+        uses: marocchino/sticky-pull-request-comment@v2.2.0
+        with:
+          recreate: true
+          path: _gb-decorator.txt
         continue-on-error: true
 
       - name: Save results
@@ -802,11 +804,3 @@ jobs:
             cy-runner/logs
             !cy-runner/logs/**/*.mp4
           retention-days: 3
-
-      - name: Comment PR
-        if: steps.gb-dec.outputs.runDec == 'true'
-        uses: marocchino/sticky-pull-request-comment@v2.2.0
-        with:
-          recreate: true
-          path: _gb-decorator.txt
-        continue-on-error: true
