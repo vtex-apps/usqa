@@ -747,7 +747,21 @@ jobs:
           account: productusqa
           appKey: ${{ fromJson(secrets.cypressJSON).vtex.apiKey }}
           appToken: ${{ fromJson(secrets.cypressJSON).vtex.apiToken }}
-        
+
+      - name: 'Lock workspace'
+        if: |
+          needs.safeCheck.outputs.substantialChanges == 'true'
+          || github.event_name == 'schedule'
+          || github.event_name == 'workflow_dispatch'
+        run: |
+          YAML='cy-runner.yml'
+          if [[ -f $YAML ]]; then
+            SCRIPT = $(yq '.lockScript' $YAML)
+            if [[ $SCRIPT != 'null' ]]; then
+               yq '.lockScript' $YAML| node - lock
+            fi
+          fi
+
       - name: 'Run Cy-Runner'
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
@@ -758,6 +772,22 @@ jobs:
         env:
           VTEX_QE: ${{ secrets.cypressJSON }}
           NODE_NO_WARNINGS: 1
+
+      - name: 'Unlock workspace'
+        if: |
+          needs.safeCheck.outputs.substantialChanges == 'true'
+          || github.event_name == 'schedule'
+          || github.event_name == 'workflow_dispatch'
+        run: |
+          YAML='cy-runner.yml'
+          if [[ -f $YAML ]]; then
+            SCRIPT = $(yq '.lockScript' $YAML)
+            if [[ $SCRIPT != 'null' ]]; then
+               yq '.lockScript' $YAML| node - unlock
+            fi
+          fi
+        continue-on-error: true
+
       - name: Save results
         uses: actions/upload-artifact@v3
         if: always()
@@ -767,3 +797,11 @@ jobs:
             cy-runner/logs
             !cy-runner/logs/**/*.mp4
           retention-days: 3
+
+      - name: Comment PR
+        uses: marocchino/sticky-pull-request-comment@v2.2.0
+        with:
+          recreate: true
+          path: _gb-decorator.txt
+        if: always()
+        continue-on-error: true
