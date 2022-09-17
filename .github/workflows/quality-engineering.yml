@@ -761,7 +761,7 @@ jobs:
             SCRIPT=$(yq '.lockScript' < $CONFIG)
             if [[ $SCRIPT != 'null' ]]; then
                LOCK='true'
-               yq '.lockScript' < $CONFIG | node - unlock
+               yq '.lockScript' < $CONFIG | node - lock
             fi
           fi
           echo "::set-output name=unlock::$LOCK"
