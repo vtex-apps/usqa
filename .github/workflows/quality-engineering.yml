@@ -741,7 +741,10 @@ jobs:
           needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
-        run: echo $VTEX_QE > .VTEX_QE.json
+        run: |
+          echo $VTEX_QE > .VTEX_QE.json
+          echo "::add-mask::${{ fromJson(secrets.cypressJSON).vtex.apiKey }}"
+          echo "::add-mask::${{ fromJson(secrets.cypressJSON).vtex.apiToken }}"
         env: 
           VTEX_QE: ${{ secrets.cypressJSON }}        
         working-directory: cy-runner
@@ -753,8 +756,8 @@ jobs:
         uses: vtex/action-toolbelt@v5
         with:
           account: productusqa
-          appKey: ${{ secrets.PRODUCTUSQA_VTEXAPPKEY }}
-          appToken: ${{ secrets.PRODUCTUSQA_VTEXAPPTOKEN }}
+          appKey: ${{ fromJson(secrets.cypressJSON).vtex.apiKey }}
+          appToken: ${{ fromJson(secrets.cypressJSON).vtex.apiToken }}
       - name: 'Lock workspace'
         id: lock
         if: |
