@@ -776,16 +776,11 @@ jobs:
           fi
           echo "::set-output name=unlock::$LOCK"
       - name: 'Run Cy-Runner'
-        id: cy-runner
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
-        run: |
-          node cy-runner
-          PR_MESSAGE='false'
-          [[ -f '_gb-decorator.txt' ]] && PR_MESSAGE='true'
-          echo "::set-output name=pr-message::$PR_MESSAGE"        
+        run: node cy-runner
         working-directory: cy-runner
         env:
           NODE_NO_WARNINGS: 1
@@ -794,7 +789,7 @@ jobs:
         run: yq '.lockScript' < cy-runner.yml | node - unlock
         continue-on-error: true
       - name: Comment PR
-        if: always() && steps.cy-runner.outputs.pr-message == 'true'
+        if: always()
         uses: marocchino/sticky-pull-request-comment@v2.2.0
         with:
           recreate: true
