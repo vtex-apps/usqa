@@ -774,18 +774,23 @@ jobs:
           NODE_NO_WARNINGS: 1
 
       - name: 'Unlock workspace'
+        id: gb-dec
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
         run: |
-          YAML='cy-runner.yml'
-          if [[ -f $YAML ]]; then
-            SCRIPT = $(yq '.lockScript' $YAML)
+          CONFIG='cy-runner.yml'
+          if [[ -f $CONFIG ]]; then
+            SCRIPT=$(yq '.lockScript' $CONFIG)
             if [[ $SCRIPT != 'null' ]]; then
-               yq '.lockScript' $YAML| node - unlock
+               yq '.lockScript' $CONFIG | node - unlock
             fi
           fi
+          DEC_FILE='_gb-decorator.txt'
+          RUN_DEC='false'
+          [[ -f $DEC_FILE ]] && RUN_DEC='true'
+          echo "::set-output name=runDec::$RUN_DEC"        
         continue-on-error: true
 
       - name: Save results
@@ -799,9 +804,9 @@ jobs:
           retention-days: 3
 
       - name: Comment PR
+        if: steps.gb-dec.outputs.runDec == 'true'
         uses: marocchino/sticky-pull-request-comment@v2.2.0
         with:
           recreate: true
           path: _gb-decorator.txt
-        if: always()
         continue-on-error: true
