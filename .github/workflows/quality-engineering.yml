@@ -732,9 +732,13 @@ jobs:
           needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
-        run: yarn && yarn test          
-        working-directory: cy-runner/test
-      - name: 'Manipulate secrets, clean environment and update browser list'
+        run: |
+          yarn browserslist --update-db
+          yarn cypress verify
+          yarn cypress info
+          yarn cypress run --browser chrome --quiet --project test
+        working-directory: cy-runner
+      - name: 'Manipulate secrets and clean environment'
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
@@ -742,7 +746,6 @@ jobs:
         run: |
           echo $VTEX_QE > .VTEX_QE.json
           rm -rf .git
-          yarn browserslist --update-db
         env: 
           VTEX_QE: ${{ secrets.cypressJSON }}        
         working-directory: cy-runner
