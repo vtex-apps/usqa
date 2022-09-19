@@ -773,7 +773,7 @@ jobs:
                yq '.lockScript' < $CONFIG | node - lock
             fi
           fi
-          echo "::set-output name=unlock::$LOCK"
+          echo && echo "::set-output name=unlock::$LOCK"
       - name: 'Run Cy-Runner'
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
