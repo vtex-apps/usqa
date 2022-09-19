@@ -732,7 +732,7 @@ jobs:
           needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
-        run: yarn test          
+        run: yarn && yarn test          
         working-directory: cy-runner/test
       - name: 'Manipulate secrets'
         if: |
