@@ -733,7 +733,6 @@ jobs:
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
         run: |
-          yarn browserslist --update-db
           yarn cypress verify
           yarn cypress info
           yarn cypress run --browser chrome --quiet --project test
