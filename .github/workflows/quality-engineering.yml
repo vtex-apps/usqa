@@ -727,21 +727,21 @@ jobs:
               cd -
             fi
           done
-      - name: 'Check Cypress version'
+      - name: 'Test and check Cypress version'
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
-        run: |
-          rm -rf .git
-          yarn cypress info
-        working-directory: cy-runner
+        run: yarn test          
+        working-directory: cy-runner/test
       - name: 'Manipulate secrets'
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
-        run: echo $VTEX_QE > .VTEX_QE.json
+        run: |
+          echo $VTEX_QE > .VTEX_QE.json
+          rm -rf .git
         env: 
           VTEX_QE: ${{ secrets.cypressJSON }}        
         working-directory: cy-runner
@@ -785,7 +785,7 @@ jobs:
         run: yq '.lockScript' < cy-runner.yml | node - unlock
         continue-on-error: true
       - name: Comment PR
-        if: always()
+        if: always() && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target')
         uses: marocchino/sticky-pull-request-comment@v2.2.0
         with:
           recreate: true
