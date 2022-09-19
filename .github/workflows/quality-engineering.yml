@@ -727,15 +727,15 @@ jobs:
               cd -
             fi
           done
-      - name: 'Check Cypress version'
+      - name: 'Test and check Cypress version'
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
         run: |
           rm -rf .git
-          yarn cypress info
-        working-directory: cy-runner
+          yarn test          
+        working-directory: cy-runner/test
       - name: 'Manipulate secrets'
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
