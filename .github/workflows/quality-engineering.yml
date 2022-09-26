@@ -176,7 +176,6 @@ jobs:
             **/*.*
           files_ignore: |
             **/*.md
-            .github/**
             docs/**
             messages/**
       # -- Second, let's take a look only on extra files
@@ -727,16 +726,16 @@ jobs:
               cd -
             fi
           done
-      - name: 'Cypress smoke test'
-        if: |
-          needs.safeCheck.outputs.substantialChanges == 'true'
-          || github.event_name == 'schedule'
-          || github.event_name == 'workflow_dispatch'
-        run: |
-          yarn cypress verify
-          yarn cypress info
-          yarn cypress run --browser chrome --quiet --project test
-        working-directory: cy-runner
+#       - name: 'Cypress smoke test'
+#         if: |
+#           needs.safeCheck.outputs.substantialChanges == 'true'
+#           || github.event_name == 'schedule'
+#           || github.event_name == 'workflow_dispatch'
+#         run: |
+#           yarn cypress verify
+#           yarn cypress info
+#           yarn cypress run --browser chrome --quiet --project test
+#         working-directory: cy-runner
       - name: 'Manipulate secrets and clean environment'
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
@@ -775,11 +774,19 @@ jobs:
           fi
           echo && echo "::set-output name=unlock::$LOCK"
       - name: 'Run Cy-Runner'
+        id: cyr
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
-        run: node cy-runner
+        run: |
+          node cy-runner
+          DECORATOR='false'
+          LOGS='false'
+          [[ -f logs/_cy-decorator.txt ]] && DECORATOR='true'
+          [[ -f logs/_cy-runner.log ]] && LOGS='true'
+          echo "::set-output name=decorator::$DECORATOR"
+          echo "::set-output name=logs::$LOGS"
         working-directory: cy-runner
         env:
           NODE_NO_WARNINGS: 1
@@ -788,15 +795,18 @@ jobs:
         run: yq '.lockScript' < cy-runner.yml | node - unlock
         continue-on-error: true
       - name: Comment PR
-        if: always() && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target')
+        if: |
+          always()
+          && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target')
+          && steps.cyr.outputs.decorator == 'true'
         uses: marocchino/sticky-pull-request-comment@v2.2.0
         with:
           recreate: true
-          path: _gb-decorator.txt
+          path: cy-runner/logs/_cy-decorator.txt
         continue-on-error: true
       - name: Save results
         uses: actions/upload-artifact@v3
-        if: always()
+        if: always() && steps.cyr.outputs.logs == 'true'
         with:
           name: cy-runner-logs
           path: |
