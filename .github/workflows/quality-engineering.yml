@@ -726,16 +726,16 @@ jobs:
               cd -
             fi
           done
-#       - name: 'Cypress smoke test'
-#         if: |
-#           needs.safeCheck.outputs.substantialChanges == 'true'
-#           || github.event_name == 'schedule'
-#           || github.event_name == 'workflow_dispatch'
-#         run: |
-#           yarn cypress verify
-#           yarn cypress info
-#           yarn cypress run --browser chrome --quiet --project test
-#         working-directory: cy-runner
+      - name: 'Cypress smoke test'
+        if: |
+          needs.safeCheck.outputs.substantialChanges == 'true'
+          || github.event_name == 'schedule'
+          || github.event_name == 'workflow_dispatch'
+        run: |
+          yarn cypress verify
+          yarn cypress info
+          yarn cypress run --browser chrome --quiet --project test
+        working-directory: cy-runner
       - name: 'Manipulate secrets and clean environment'
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
