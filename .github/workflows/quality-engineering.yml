@@ -102,7 +102,7 @@ on:
       cyRunnerBranch:
         description: 'Which branch use in Cypress-Runner?'
         type: string
-        default: 'main'
+        default: 'release/v1'
         required: false
       cyRunnerTimeOut:
         description: 'What is the time out for the Cypress-Runner job?'
