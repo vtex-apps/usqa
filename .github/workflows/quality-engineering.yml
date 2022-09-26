@@ -774,13 +774,20 @@ jobs:
           fi
           echo && echo "::set-output name=unlock::$LOCK"
       - name: 'Run Cy-Runner'
-        id: cyr
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
+        run: node cy-runner
+        working-directory: cy-runner
+      - name: 'Check Cy-Runner output'
+        id: cyr
+        if: |
+          always()
+          && (needs.safeCheck.outputs.substantialChanges == 'true'
+          || github.event_name == 'schedule'
+          || github.event_name == 'workflow_dispatch')
         run: |
-          node cy-runner
           DECORATOR='false'
           LOGS='false'
           [[ -f logs/_cy-decorator.txt ]] && DECORATOR='true'
@@ -788,8 +795,7 @@ jobs:
           echo "::set-output name=decorator::$DECORATOR"
           echo "::set-output name=logs::$LOGS"
         working-directory: cy-runner
-        env:
-          NODE_NO_WARNINGS: 1
+        continue-on-error: true
       - name: 'Unlock workspace'
         if: always() && steps.lock.outputs.unlock == 'true'
         run: yq '.lockScript' < cy-runner.yml | node - unlock
