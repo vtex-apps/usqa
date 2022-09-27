@@ -810,7 +810,11 @@ jobs:
           recreate: true
           path: cy-runner/logs/_cy-decorator.txt
         continue-on-error: true
-      - name: Save results
+      - name: Sanitize logs
+        if: always() && steps.cyr.outputs.logs == 'true'
+        run: sed -i -e /Bearer/d -e /Basic/d *
+        working-directory: cy-runner/logs
+      - name: Create debug artifacts
         uses: actions/upload-artifact@v3
         if: always() && steps.cyr.outputs.logs == 'true'
         with:
