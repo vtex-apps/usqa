@@ -812,7 +812,7 @@ jobs:
         continue-on-error: true
       - name: Sanitize logs
         if: always() && steps.cyr.outputs.logs == 'true'
-        run: sed -i -e /Bearer/d -e /Basic/d *
+        run: sed -i -e /Bearer/d -e /Basic/d $(find -type f)
         working-directory: cy-runner/logs
       - name: Create debug artifacts
         uses: actions/upload-artifact@v3
