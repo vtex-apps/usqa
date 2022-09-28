@@ -102,7 +102,7 @@ on:
       cyRunnerBranch:
         description: 'Which branch use in Cypress-Runner?'
         type: string
-        default: 'release/v2'
+        default: 'main'
         required: false
       cyRunnerTimeOut:
         description: 'What is the time out for the Cypress-Runner job?'
@@ -176,7 +176,6 @@ jobs:
             **/*.*
           files_ignore: |
             **/*.md
-            .github/**
             docs/**
             messages/**
       # -- Second, let's take a look only on extra files
@@ -717,37 +716,63 @@ jobs:
           || github.event_name == 'workflow_dispatch'
         run: |
           echo "==> Installing root packages..."
-          [[ -f 'package.json' ]] && yarn install --frozen-lockfile --prod
+          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
           for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
             # checkout-ui-custom has a bug on package.json installation, so let's skip it
             if [[ $DIR != 'checkout-ui-custom' ]]; then
               echo "==> Installing $DIR packages..."
               cd "$DIR"
-              yarn install --frozen-lockfile --prod
+              yarn install --frozen-lockfile
               cd -
             fi
           done
-      - name: 'Check Cypress version'
+      - name: 'Cypress smoke test'
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
         run: |
-          rm -rf .git
+          yarn cypress verify
           yarn cypress info
+          yarn cypress run --browser chrome --quiet --project test
         working-directory: cy-runner
-        
+      - name: 'Manipulate secrets and clean environment'
+        if: |
+          needs.safeCheck.outputs.substantialChanges == 'true'
+          || github.event_name == 'schedule'
+          || github.event_name == 'workflow_dispatch'
+        run: |
+          echo $VTEX_QE > .VTEX_QE.json
+          rm -rf .git
+        env: 
+          VTEX_QE: ${{ secrets.cypressJSON }}        
+        working-directory: cy-runner
       - name: 'Set up VTEX Toolbelt'
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
-        uses: vtex/action-toolbelt@v5
+        uses: vtex/action-toolbelt@v7
         with:
           account: productusqa
-          appKey: ${{ fromJson(secrets.cypressJSON).vtex.apiKey }}
-          appToken: ${{ fromJson(secrets.cypressJSON).vtex.apiToken }}
-        
+          jsonFile: cy-runner/.VTEX_QE.json
+      - name: 'Lock workspace'
+        id: lock
+        if: |
+          needs.safeCheck.outputs.substantialChanges == 'true'
+          || github.event_name == 'schedule'
+          || github.event_name == 'workflow_dispatch'
+        run: |
+          CONFIG='cy-runner.yml'
+          LOCK='false'
+          if [[ -f $CONFIG ]]; then
+            SCRIPT=$(yq '.lockScript' < $CONFIG)
+            if [[ $SCRIPT != 'null' ]]; then
+               LOCK='true'
+               yq '.lockScript' < $CONFIG | node - lock
+            fi
+          fi
+          echo && echo "::set-output name=unlock::$LOCK"
       - name: 'Run Cy-Runner'
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
@@ -755,12 +780,43 @@ jobs:
           || github.event_name == 'workflow_dispatch'
         run: node cy-runner
         working-directory: cy-runner
-        env:
-          VTEX_QE: ${{ secrets.cypressJSON }}
-          NODE_NO_WARNINGS: 1
-      - name: Save results
+      - name: 'Check Cy-Runner output'
+        id: cyr
+        if: |
+          always()
+          && (needs.safeCheck.outputs.substantialChanges == 'true'
+          || github.event_name == 'schedule'
+          || github.event_name == 'workflow_dispatch')
+        run: |
+          DECORATOR='false'
+          LOGS='false'
+          [[ -f logs/_cy-decorator.txt ]] && DECORATOR='true'
+          [[ -f logs/_cy-runner.log ]] && LOGS='true'
+          echo "::set-output name=decorator::$DECORATOR"
+          echo "::set-output name=logs::$LOGS"
+        working-directory: cy-runner
+        continue-on-error: true
+      - name: 'Unlock workspace'
+        if: always() && steps.lock.outputs.unlock == 'true'
+        run: yq '.lockScript' < cy-runner.yml | node - unlock
+        continue-on-error: true
+      - name: Comment PR
+        if: |
+          always()
+          && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target')
+          && steps.cyr.outputs.decorator == 'true'
+        uses: marocchino/sticky-pull-request-comment@v2.2.0
+        with:
+          recreate: true
+          path: cy-runner/logs/_cy-decorator.txt
+        continue-on-error: true
+      - name: Sanitize logs
+        if: always() && steps.cyr.outputs.logs == 'true'
+        run: sed -i -e /Bearer/d -e /Basic/d $(ls *.{json,yml,yaml,txt,log} | xargs)
+        working-directory: cy-runner/logs
+      - name: Create debug artifacts
         uses: actions/upload-artifact@v3
-        if: always()
+        if: always() && steps.cyr.outputs.logs == 'true'
         with:
           name: cy-runner-logs
           path: |
