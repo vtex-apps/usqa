@@ -459,7 +459,7 @@ jobs:
             -Dsonar.organization=${{ inputs.nodeSonarOrganization }}
       - name: 'Untrusted SonarCloud Scan'
         if: ( github.event.pull_request.head.repo.fork == true )
-        uses: SonarSource/sonarcloud-github-action@v1.6
+        uses: SonarSource/sonarcloud-github-action@v1.7
         env:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
           SONAR_TOKEN: ${{ secrets.sonarToken }}
