@@ -449,7 +449,7 @@ jobs:
         working-directory: react
       - name: 'Trusted SonarCloud Scan'
         if: ( github.event.pull_request.head.repo.fork == false )
-        uses: SonarSource/sonarcloud-github-action@v1.6
+        uses: SonarSource/sonarcloud-github-action@v1.7
         env:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
           SONAR_TOKEN: ${{ secrets.sonarToken }}
@@ -459,7 +459,7 @@ jobs:
             -Dsonar.organization=${{ inputs.nodeSonarOrganization }}
       - name: 'Untrusted SonarCloud Scan'
         if: ( github.event.pull_request.head.repo.fork == true )
-        uses: SonarSource/sonarcloud-github-action@v1.6
+        uses: SonarSource/sonarcloud-github-action@v1.7
         env:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
           SONAR_TOKEN: ${{ secrets.sonarToken }}
@@ -756,7 +756,7 @@ jobs:
         with:
           account: productusqa
           jsonFile: cy-runner/.VTEX_QE.json
-      - name: 'Lock workspace'
+      - name: 'Reserve orderFrom'
         id: lock
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
@@ -766,10 +766,10 @@ jobs:
           CONFIG='cy-runner.yml'
           LOCK='false'
           if [[ -f $CONFIG ]]; then
-            SCRIPT=$(yq '.lockScript' < $CONFIG)
-            if [[ $SCRIPT != 'null' ]]; then
+            if [[ $(yq '.workspace.reserveOrderForm' cy-runner.yml) == 'true' ]]; then            
                LOCK='true'
-               yq '.lockScript' < $CONFIG | node - lock
+               sed -i /reserveOrderForm/d cy-runner.yml
+               node cy-runner/node/lock.js reserve
             fi
           fi
           echo && echo "::set-output name=unlock::$LOCK"
@@ -780,7 +780,7 @@ jobs:
           || github.event_name == 'workflow_dispatch'
         run: node cy-runner
         working-directory: cy-runner
-      - name: 'Check Cy-Runner output'
+      - name: 'Anylize Cy-Runner output'
         id: cyr
         if: |
           always()
@@ -796,9 +796,9 @@ jobs:
           echo "::set-output name=logs::$LOGS"
         working-directory: cy-runner
         continue-on-error: true
-      - name: 'Unlock workspace'
+      - name: 'Release orderForm'
         if: always() && steps.lock.outputs.unlock == 'true'
-        run: yq '.lockScript' < cy-runner.yml | node - unlock
+        run: node cy-runner/node/lock.js release
         continue-on-error: true
       - name: Comment PR
         if: |
