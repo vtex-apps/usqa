@@ -756,7 +756,7 @@ jobs:
         with:
           account: productusqa
           jsonFile: cy-runner/.VTEX_QE.json
-      - name: 'Reserve orderFrom'
+      - name: 'Reserve account level resources'
         id: lock
         if: |
           needs.safeCheck.outputs.substantialChanges == 'true'
@@ -766,9 +766,9 @@ jobs:
           CONFIG='cy-runner.yml'
           LOCK='false'
           if [[ -f $CONFIG ]]; then
-            if [[ $(yq '.workspace.reserveOrderForm' cy-runner.yml) == 'true' ]]; then            
+            if [[ $(yq '.workspace.reserveAccount.enabled' cy-runner.yml) == 'true' ]]; then            
                LOCK='true'
-               sed -i /reserveOrderForm/d cy-runner.yml
+               yq -i '.workspace.reserveAccount.enabled = false' cy-runner.yml
                node cy-runner/node/lock.js reserve
             fi
           fi
@@ -796,7 +796,7 @@ jobs:
           echo "::set-output name=logs::$LOGS"
         working-directory: cy-runner
         continue-on-error: true
-      - name: 'Release orderForm'
+      - name: 'Release account level resources'
         if: always() && steps.lock.outputs.unlock == 'true'
         run: node cy-runner/node/lock.js release
         continue-on-error: true
