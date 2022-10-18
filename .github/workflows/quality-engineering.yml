@@ -1,11 +1,10 @@
-name: '[QE] Quality Engineering'
-
+name: "[QE] Quality Engineering"
 on:
   # Just to make easier debug typos
   workflow_dispatch:
     inputs:
-      debug_enabled:
-        description: 'Run the build with tmate debugging enabled'
+      debugEnabled:
+        description: "Run the build with tmate debugging enabled"
         type: boolean
         required: false
         default: false
@@ -13,99 +12,99 @@ on:
   workflow_call:
     inputs:
       # -----------------------------------------------------------------------------------------
-      # Danger Section
+      # Danger
       # -----------------------------------------------------------------------------------------
       danger:
-        description: 'Run node Danger action?'
+        description: "Run Danger?"
         type: boolean
         default: false
         required: false
       dangerRequireChangelog:
-        description: 'Require changlog version for Danger?'
+        description: "Require changelog version for Danger?"
         type: boolean
         default: false
         required: false
       # -----------------------------------------------------------------------------------------
-      # Node JS Section [Lint, Tests, Sonar]
+      # Node.js
       # -----------------------------------------------------------------------------------------
       nodeLint:
-        description: 'Run node lint?'
+        description: "Run Node.js lint?"
         type: boolean
         default: false
         required: false
       nodeTest:
-        description: 'Run Node.js unit tests on node folder?'
+        description: "Run Node.js unit tests on node folder?"
         type: boolean
         default: false
         required: false
       reactTest:
-        description: 'Run Node.js unit tests on react folder?'
+        description: "Run Node.js unit tests on react folder?"
         type: boolean
         default: false
         required: false
       nodeSonar:
-        description: 'Run Node.js SonarCloud?'
+        description: "Run Node.js SonarCloud?"
         type: boolean
         default: false
         required: false
       nodeSonarProjectKey:
-        description: 'What is the SonarCloud project for Node.js?'
+        description: "What is the SonarCloud project for Node.js?"
         type: string
         default: none
         required: false
       nodeSonarOrganization:
-        description: 'What is the SonarCloud Organization for Node.js?'
+        description: "What is the SonarCloud Organization for Node.js?"
         type: string
         default: none
         required: false
       # -----------------------------------------------------------------------------------------
-      # dotNet Section [Sonar]
+      # .Net
       # -----------------------------------------------------------------------------------------
       dotnetLint:
-        description: 'Run .Net Lint?'
+        description: "Run .Net Lint?"
         type: boolean
         default: false
         required: false
       dotnetTest:
-        description: 'Run .Net unit tests?'
+        description: "Run .Net unit tests?"
         type: boolean
         default: false
         required: false        
       dotnetVersion:
-        description: 'What is the .Net version?'
+        description: "What is the .Net version?"
         type: string
-        default: '3.0'
+        default: "3.0"
         required: false
       dotnetSonar:
-        description: 'Run SonarCloud for .Net?'
+        description: "Run SonarCloud for .Net?"
         type: boolean
         default: false
         required: false
       dotnetSonarProjectKey:
-        description: 'What is the SonarCloud project for .Net?'
+        description: "What is the SonarCloud project for .Net?"
         type: string
         default: none
         required: false
       dotnetSonarOrganization:
-        description: 'What is the SonarCloud Organization for .Net?'
+        description: "What is the SonarCloud Organization for .Net?"
         type: string
         default: none
         required: false
       # -----------------------------------------------------------------------------------------
-      # Cypress section
+      # Cypress
       # -----------------------------------------------------------------------------------------
       cypress:
-        description: 'Do E2E tests?'
+        description: "Run E2E tests?"
         type: boolean
         default: false
         required: false
       cyRunnerBranch:
-        description: 'Which branch use in Cypress-Runner?'
+        description: "Which branch use in Cy-Runner?"
         type: string
         default: 'main'
         required: false
       cyRunnerTimeOut:
-        description: 'What is the time out for the Cypress-Runner job?'
+        description: "What is the time out for the Cy-Runner?"
         type: number
         default: 30
         required: false
@@ -115,711 +114,722 @@ on:
       # Secrets for GitHub token, SonarCloud token and Cypress JSON
       # -----------------------------------------------------------------------------------------
       githubToken:
-        description: 'A token to access GitHub'
+        description: "A token to access GitHub"
         required: false
       sonarToken:
-        description: 'A token to have access to SonarCloud'
+        description: "A token to have access to SonarCloud"
         required: false
       cypressJson:
-        description: 'A JSON to pass make Cy-Runner works'
+        description: "A JSON secret to Cy-Runner job"
         required: false
 
 jobs:
   # -----------------------------------------------------------------------------------------
-  # Job to check here if it is safe to run it on pull_request_target events
+  # Security check: if pull_request_target, then should have 'safe to test' label
   # -----------------------------------------------------------------------------------------
   safeCheck:
-    name: 'Security check'
+    name: "Security check"
     runs-on: ubuntu-latest
-    timeout-minutes: 1
+    timeout-minutes: 2
     outputs:
-      substantialChanges: ${{ steps.changed-files.outputs.any_modified }}
+      changes: ${{ steps.code.outputs.changed }}
     steps:
-      - name: 'Stop if from outside without the label "safe to test"'
-        if: >-
-          ( github.event.pull_request.head.repo.fork == true ) &&
-          ( !contains(github.event.pull_request.labels.*.name, 'safe to test') )
-        run: |
-          echo "Attention:"
-          echo " "
-          echo "💡 Thank you for submitting your contribution on this repository!"
-          echo "   Before merge this PR, it must pass our Quality Engineering process."
-          echo "   Please, ask for someone from VTEX to read your changes and add the label 'safe to test' on your PR."
-          echo " "
-          echo "   If you made changes after the approval, someone needs redo the label thing."
-          exit 1
-      - name: 'Remove the label "safe to test" to avoid run again on changed code'
-        if: ( contains(github.event.pull_request.labels.*.name, 'safe to test') )
-        uses: actions-ecosystem/action-remove-labels@v1
+      - name: "PR message to people outside VTEX"
+        if: |
+          github.event.pull_request.head.repo.fork == true && 
+          !contains(github.event.pull_request.labels.*.name, 'safe to test')
+        uses: marocchino/sticky-pull-request-comment@97bddef64db61b9d80edc69593cc4e4c415c3362 # v2.2.1
+        with:
+          header: securityCheck
+          recreate: true
+          message: |
+            # Security check
+            💡 ${{ env.GITHUB_ACTOR }}, thank you for submitting your contribution on this repository!
+            
+            Your ${{ env.GITHUB_HEAD_REF }} must pass on our Quality Engineering process before get merged.
+            Please, ask someone from VTEX to read your changes and add the label  `safe to test` on your PR.
+            
+            If you do any changes after the approval, someone from VTEX needs to redo the label thing.
+
+      - name: "Fail if outside without 'safe to test' label"
+        if: |
+          github.event.pull_request.head.repo.fork == true && 
+          !contains(github.event.pull_request.labels.*.name, 'safe to test')
+        run: exit 1
+
+      - name: "Clear PR safe check message"
+        if: contains(github.event.pull_request.labels.*.name, 'safe to test')
+        uses: marocchino/sticky-pull-request-comment@97bddef64db61b9d80edc69593cc4e4c415c3362 # v2.2.1
+        with:
+          header: securityCheck
+          delete: true
+
+      - name: "Remove the label 'safe to test' to avoid run again on changed code"
+        if: contains(github.event.pull_request.labels.*.name, 'safe to test')
+        uses: actions-ecosystem/action-remove-labels@2ce5d41b4b6aa8503e285553f75ed56e0a40bae0 # v1.3.0
         with:
           labels: safe to test
           GITHUB_TOKEN: ${{ secrets.githubToken }}
-      - name: 'Trusted checkout'
-        uses: actions/checkout@v3
-        if: ( github.event.pull_request.head.repo.fork == false )
-        with:
-          fetch-depth: 0
-      - name: 'Untrusted checkout'
-        uses: actions/checkout@v3
-        if: ( github.event.pull_request.head.repo.fork == true )
+
+      - name: "Trusted checkout"
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
+        if: github.event.pull_request.head.repo.fork == false
+
+      - name: "Untrusted checkout"
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
+        if: github.event.pull_request.head.repo.fork == true
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
-      # There's a bug on changed-files actions, so let's do it in three steps
-      # -- First, let's take a look on the overall
-      - name: 'Get all changed files'
-        id: a
-        uses: tj-actions/changed-files@v22.2
-        if: ( github.event.pull_request.head.repo.fork == false )
+
+      - name: "Set up Node.js"
+        uses: actions/setup-node@8c91899e586c5b171469028077307d293428b516 # v3.5.1
         with:
-          files: |
-            **/*.*
-          files_ignore: |
-            **/*.md
-            docs/**
-            messages/**
-      # -- Second, let's take a look only on extra files
-      - name: 'Get changes on extra files'
-        id: b
-        uses: tj-actions/changed-files@v22.2
-        if: ( github.event.pull_request.head.repo.fork == false )
-        with:
-          files: |
-            messages/en.json
-            messages/en-us.json
-      # -- Third, let's merge it and give the final result
-      - name: 'Do we have substantial changes?'
-        id: changed-files
+          cache: yarn
+        continue-on-error: true
+
+      - name: "Install Danger.js"
+        run: yarn global add danger@11
+
+      - name: "Get changed/added files"
+        id: code
         run: |
-          CHANGES=false
-          A=${{ steps.a.outputs.any_modified }}
-          B=${{ steps.b.outputs.any_modified }}
-          [[ -n $A ]] && [[ $A == true ]] && CHANGES=true
-          [[ -n $B ]] && [[ $B == true ]] && CHANGES=true
-          # If from fork, always run full steps
-          [[ "${{ github.event.pull_request.head.repo.fork }}" == "true" ]] && CHANGES=true
-          echo "::set-output name=any_modified::$CHANGES"
-          echo $CHANGES        
-      - name: Debug
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+          echo "changed=true" > $GITHUB_OUTPUT
+          if [[ ${{ github.event.pull_request.head.repo.fork }} == 'false' ]]; then
+            CHANGED="changed.js"
+            echo "const { danger } = require("danger")"                                              > $CHANGES
+            echo "const code = danger.git.fileMatch('dotnet/**', 'react/**', 'node/**',             >> $CHANGES
+            echo "                                  'messages/en.json', 'messages/en-us.json')      >> $CHANGES
+            echo "if (code.modified || code.created || code.deleted || code.edited) message("yes")  >> $CHANGES
+            CHECK=$(danger pr --text-only --dangerfile $CHANGED | grep yes)
+            [[ -z $CHECK ]] && echo "changed=false" > $GITHUB_OUTPUT
+          fi
+
+      - name: "Debug"
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debugEnabled }}
         timeout-minutes: 5
-        uses: mxschmitt/action-tmate@v3
+        uses: mxschmitt/action-tmate@28f608baaa037465aa887c21a7924e9e6b66a9e0 # v3.13
         with:
           limit-access-to-actor: true
 
-  # -----------------------------------------------------------------------------------------
-  # Job to run Danger
-  # -----------------------------------------------------------------------------------------
-  danger:
-    name: 'Danger'
-    if: ${{ inputs.danger }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    needs: [safeCheck]
-    steps:
-      - name: 'Trusted checkout'
-        uses: actions/checkout@v3
-        if: ( github.event.pull_request.head.repo.fork == false )
-      - name: 'Untrusted checkout'
-        uses: actions/checkout@v3
-        if: ( github.event.pull_request.head.repo.fork == true )
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-      - name: 'Set up NodeJS'
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          cache: yarn
-        continue-on-error: true
-      - name: 'Danger CI'
-        uses: vtex/danger@master
-        env:
-          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
-          REQUIRE_CHANGELOG_VERSION: ${{ inputs.dangerRequireChangelog }}
-
-  # -----------------------------------------------------------------------------------------
-  # Job to run Lint (Node.js)
-  # -----------------------------------------------------------------------------------------
-  nodeLint:
-    name: 'Lint Node.js'
-    if: ${{ inputs.nodeLint || inputs.nodeSonar || inputs.nodeTest}}
-    runs-on: ubuntu-latest
-    needs: [safeCheck]
-    timeout-minutes: 5
-    steps:
-      - name: 'Trusted checkout'
-        uses: actions/checkout@v3
-        if: ( github.event.pull_request.head.repo.fork == false )
-      - name: 'Untrusted checkout'
-        uses: actions/checkout@v3
-        if: ( github.event.pull_request.head.repo.fork == true )
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-      - name: 'Lint JSON'
-        run: |
-          FAILED=0
-          find -name "*.json" -not -path "*/node_modules/*" -not -path "./dotnet*" | while read json; do
-            ERROR=0
-            jq . -cM "$json" 1>/dev/null 2>error || ERROR=1
-            if [[ $ERROR -eq 0 ]]; then
-              echo "OK: $json"
-            else
-              FAILED=1
-              echo "ERROR: $json"
-              MSG=$(sed 's/\(.*\) at line \(.*\), column \(.*\)$/\1;\2;\3/' error)
-              F="$json"
-              E="$(echo $MSG | cut -d ';' -f1)"
-              L=$(echo $MSG | cut -d ';' -f2)
-              C=$(echo $MSG | cut -d ';' -f3)
-              echo "::error file=$F,line=$L,col=$C::$E"
-            fi
-          done
-          if [[ $FAILED -eq 1 ]]; then 
-            exit 1; 
-          fi
-      - name: 'Set up Node.js'
-        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'push' )
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          cache: yarn
-        continue-on-error: true
-      - name: 'Install packages'
-        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'push' )
-        run: |
-          echo "==> Installing root packages..."
-          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
-          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
-            # checkout-ui-custom has a bug on package.json installation, so let's skip it
-            if [[ $DIR != 'checkout-ui-custom' ]]; then
-              echo "==> Installing $DIR packages..."
-              cd "$DIR"
-              yarn install --frozen-lockfile
-              cd -
-            fi
-          done
-      - name: 'Run lint'
-        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'push' )
-        run: yarn lint
-
-  # -----------------------------------------------------------------------------------------
-  # Job to run tests (Node.js on node folder)
-  # -----------------------------------------------------------------------------------------
-  nodeTest:
-    name: 'Test Node.js'
-    if: ${{ inputs.nodeTest }}
-    runs-on: ubuntu-latest
-    needs: [safeCheck]
-    timeout-minutes: 5
-    steps:
-      - name: 'Trusted checkout'
-        uses: actions/checkout@v3
-        if: ( github.event.pull_request.head.repo.fork == false )
-      - name: 'Untrusted checkout'
-        uses: actions/checkout@v3
-        if: ( github.event.pull_request.head.repo.fork == true )
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-      - name: 'Set up Node.js'
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          cache: yarn
-        continue-on-error: true
-      - name: 'Install dependencies'
-        run: |
-          echo "==> Installing root packages..."
-          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
-          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
-            # checkout-ui-custom has a bug on package.json installation, so let's skip it
-            if [[ $DIR != 'checkout-ui-custom' ]]; then
-              echo "==> Installing $DIR packages..."
-              cd "$DIR"
-              yarn install --frozen-lockfile
-              cd -
-            fi
-          done
-      - name: 'Run unit tests on node folder'
-        run: yarn test --coverage
-        working-directory: node
-
-  # -----------------------------------------------------------------------------------------
-  # Job to run tests (Node.js on react folder)
-  # -----------------------------------------------------------------------------------------
-  reactTest:
-    name: 'Test React'
-    if: ${{ inputs.reactTest }}
-    runs-on: ubuntu-latest
-    needs: [safeCheck]
-    timeout-minutes: 5
-    steps:
-      - name: 'Trusted checkout'
-        uses: actions/checkout@v3
-        if: ( github.event.pull_request.head.repo.fork == false )
-      - name: 'Untrusted checkout'
-        uses: actions/checkout@v3
-        if: ( github.event.pull_request.head.repo.fork == true )
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-      - name: 'Set up Node.js'
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          cache: yarn
-        continue-on-error: true
-      - name: 'Install dependencies'
-        run: |
-          echo "==> Installing root packages..."
-          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
-          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
-            # checkout-ui-custom has a bug on package.json installation, so let's skip it
-            if [[ $DIR != 'checkout-ui-custom' ]]; then
-              echo "==> Installing $DIR packages..."
-              cd "$DIR"
-              yarn install --frozen-lockfile
-              cd -
-            fi
-          done
-      - name: 'Run unit tests on react folder'
-        run: yarn test --coverage
-        working-directory: react
-        
-  # -----------------------------------------------------------------------------------------
-  # Job to run SonarCloud (Node.js)
-  # -----------------------------------------------------------------------------------------
-  nodeSonar:
-    name: 'Scan Node.js'
-    if: |
-      always()
-      && ( inputs.nodeSonar ) 
-      && ( github.actor != 'dependabot[bot]' )  
-      && ( github.event.pull_request.draft == false )
-      && ( needs.safeCheck.result == 'success')
-      && ( needs.nodeLint.result == 'success' || needs.nodeLint.result == 'skipped')
-      && ( needs.nodeTest.result == 'success' || needs.nodeTest.result == 'skipped')
-      && ( needs.reactTest.result == 'success' || needs.reactTest.result == 'skipped')
-    runs-on: ubuntu-latest
-    needs: [safeCheck, nodeLint, nodeTest, reactTest]
-    timeout-minutes: 5
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-nodejs
-    steps:
-      - name: 'Trusted checkout'
-        uses: actions/checkout@v3
-        if: ( github.event.pull_request.head.repo.fork == false )
-        with:
-          fetch-depth: 0
-      - name: 'Untrusted checkout'
-        uses: actions/checkout@v3
-        if: ( github.event.pull_request.head.repo.fork == true )
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          fetch-depth: 0
-      - name: 'Set up Node.js'
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          cache: yarn
-        continue-on-error: true
-      - name: 'Install packages'
-        run: |
-          echo "==> Installing root packages..."
-          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
-          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
-            # checkout-ui-custom has a bug on package.json installation, so let's skip it
-            if [[ $DIR != 'checkout-ui-custom' ]]; then
-              echo "==> Installing $DIR packages..."
-              cd "$DIR"
-              yarn install --frozen-lockfile
-              cd -
-            fi
-          done
-      - name: 'Gererate Node coverage report'
-        if: ${{ inputs.nodeTest }}
-        run: yarn test --coverage
-        working-directory: node
-      - name: 'Gererate React coverage report'
-        if: ${{ inputs.reactTest }}
-        run: yarn test --coverage
-        working-directory: react
-      - name: 'Trusted SonarCloud Scan'
-        if: ( github.event.pull_request.head.repo.fork == false )
-        uses: SonarSource/sonarcloud-github-action@v1.7
-        env:
-          GITHUB_TOKEN: ${{ secrets.githubToken }}
-          SONAR_TOKEN: ${{ secrets.sonarToken }}
-        with:
-          args: >
-            -Dsonar.projectKey=${{ inputs.nodeSonarProjectKey }}
-            -Dsonar.organization=${{ inputs.nodeSonarOrganization }}
-      - name: 'Untrusted SonarCloud Scan'
-        if: ( github.event.pull_request.head.repo.fork == true )
-        uses: SonarSource/sonarcloud-github-action@v1.7
-        env:
-          GITHUB_TOKEN: ${{ secrets.githubToken }}
-          SONAR_TOKEN: ${{ secrets.sonarToken }}
-        with:
-          args: >
-            -Dsonar.projectKey=${{ inputs.nodeSonarProjectKey }}
-            -Dsonar.organization=${{ inputs.nodeSonarOrganization }}
-            -Dsonar.pullrequest.key=${{ github.event.pull_request.number }} 
-            -Dsonar.pullrequest.branch=${{ github.event.pull_request.head.ref }} 
-            -Dsonar.scm.revision=${{ github.event.pull_request.head.sha }}
-      - name: 'Process SonarCloud results'
-        working-directory: .scannerwork
-        run: |
-          TASK_URL=$(sed -nr 's/ceTaskUrl=(.*)/\1/p' report-task.txt)
-          STATUS='FAILURE'
-          MAX_TRY=3
-          TRY=1
-          while [[ $STATUS != 'SUCCESS' && $TRY -le $MAX_TRY ]]; do
-            echo -n "Trying to get status from SonarCloud ($TRY of $MAX_TRY)... "
-            sleep 5
-            STATUS=$(curl -s -u $SONAR_TOKEN: $TASK_URL | jq .task.status | sed s/\"//g)
-            echo "$STATUS."
-            TRY=$(( $TRY + 1 ))
-          done
-          if [[ $STATUS == 'SUCCESS' ]]; then
-            echo -n "Trying to get analysis ID from SonarCloud... "
-            sleep 5
-            ANALISYS_ID=$(curl -s -u $SONAR_TOKEN: $TASK_URL | jq -r .task.analysisId)
-            echo "$ANALISYS_ID."
-            TRY=1
-            GATE_API='https://sonarcloud.io/api/qualitygates'
-            while [[ $GATE_STATUS != 'OK' &&  $GATE_STATUS != 'ERROR' ]]; do
-              echo -n "Checking Quality Gate info ($TRY)... "
-              sleep 5
-              GATE_STATUS=$(curl -s -u $SONAR_TOKEN: "$GATE_API/project_status?analysisId=${ANALISYS_ID}" | jq -r .projectStatus.status)
-              echo "$GATE_STATUS."
-             TRY=$(( $TRY + 1 ))
-            done              
-            if [[ $GATE_STATUS == 'OK' ]]; then 
-              exit 0
-            else
-              echo 'The quality gate failed. Please, review the reasons on SonarCloud!'
-              exit 1
-            fi
-          else 
-            echo 'The analisys failed. Please, review your settings and sonar token!'
-            exit 1
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.githubToken }}
-          SONAR_TOKEN: ${{ secrets.sonarToken }}
-
-
-  # -----------------------------------------------------------------------------------------
-  # Job to run Lint (.Net)
-  # -----------------------------------------------------------------------------------------
-  dotnetLint:
-    name: 'Lint .Net'
-    if: ( inputs.dotnetLint ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
-    runs-on: ubuntu-latest
-    needs: [safeCheck]
-    timeout-minutes: 10    
-    steps:
-      - name: 'Trusted checkout'
-        uses: actions/checkout@v3
-        if: ( github.event.pull_request.head.repo.fork == false )
-      - name: 'Untrusted checkout'
-        uses: actions/checkout@v3
-        if: ( github.event.pull_request.head.repo.fork == true )
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-      - name: 'Lint JSON'
-        run: |
-          FAILED=0
-          find -name "*.json" -not -path "./react*" -not -path "./node*" | while read json; do
-            ERROR=0
-            jq . -cM "$json" 1>/dev/null 2>error || ERROR=1
-            if [[ $ERROR -eq 0 ]]; then
-              echo "OK: $json"
-            else
-              FAILED=1
-              echo "ERROR: $json"
-              MSG=$(sed 's/\(.*\) at line \(.*\), column \(.*\)$/\1;\2;\3/' error)
-              F="$json"
-              E="$(echo $MSG | cut -d ';' -f1)"
-              L=$(echo $MSG | cut -d ';' -f2)
-              C=$(echo $MSG | cut -d ';' -f3)
-              echo "::error file=$F,line=$L,col=$C::$E"
-            fi
-          done
-          if [[ $FAILED -eq 1 ]]; then 
-            exit 1; 
-          fi
-      - name: Setup .Net
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: ${{ inputs.dotnetVersion }}
-      - name: Install dependencies
-        run: dotnet restore
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
-        working-directory: dotnet
-
-  # -----------------------------------------------------------------------------------------
-  # Job to run Tests (.Net)
-  # -----------------------------------------------------------------------------------------
-  dotnetTest:
-    name: 'Test .Net'
-    if: ( inputs.dotnetTest ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: [safeCheck]
-    steps:
-      - name: 'Trusted checkout'
-        uses: actions/checkout@v3
-        if: ( github.event.pull_request.head.repo.fork == false )
-      - name: 'Untrusted checkout'
-        uses: actions/checkout@v3
-        if: ( github.event.pull_request.head.repo.fork == true )
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-      - name: Setup .Net
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: ${{ inputs.dotnetVersion }}
-      - name: Install dependencies
-        run: dotnet restore
-      - name: Build
-        run: dotnet build --configuration Release --no-restore &> /dev/null
-      - name: Test
-        run: dotnet test --no-restore --verbosity normal
-        
-  # -----------------------------------------------------------------------------------------
-  # Job to run SonarCloud (.Net)
-  # -----------------------------------------------------------------------------------------
-  dotnetSonar:
-    name: 'Scan .Net'
-    if: |
-      always()
-      && ( inputs.dotnetSonar ) 
-      && ( github.actor != 'dependabot[bot]' )  
-      && ( github.event.pull_request.draft == false )
-      && ( needs.safeCheck.result == 'success')
-      && ( needs.dotnetLint.result == 'success' || needs.dotnetLint.result == 'skipped')
-      && ( needs.dotnetTest.result == 'success' || needs.dotnetTest.result == 'skipped')
-    runs-on: windows-latest
-    timeout-minutes: 10
-    needs: [safeCheck, dotnetLint, dotnetTest]
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-dotNet
-    steps:
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
-        with:
-          java-version: 1.11
-      - name: 'Trusted checkout'
-        uses: actions/checkout@v3
-        if: ( github.event.pull_request.head.repo.fork == false )
-        with:
-          fetch-depth: 0
-      - name: 'Untrusted checkout'
-        uses: actions/checkout@v3
-        if: ( github.event.pull_request.head.repo.fork == true )
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          fetch-depth: 0
-      - name: Cache SonarCloud packages
-        uses: actions/cache@v1
-        with:
-          path: ~\sonar\cache
-          key: ${{ runner.os }}-sonar-vtex
-          restore-keys: ${{ runner.os }}-sonar-vtex
-      - name: Cache SonarCloud scanner
-        id: cache-sonar-scanner
-        uses: actions/cache@v1
-        with:
-          path: .\.sonar\scanner
-          key: ${{ runner.os }}-sonar-scanner-vtex
-          restore-keys: ${{ runner.os }}-sonar-scanner-vtex
-      - name: Install SonarCloud scanner
-        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
-        shell: powershell
-        run: |
-          New-Item -Path .\.sonar\scanner -ItemType Directory
-          dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
-      - name: Build and analyze
-        env:
-          GITHUB_TOKEN: ${{ secrets.githubToken }}
-          SONAR_TOKEN: ${{ secrets.sonarToken }}
-        shell: powershell
-        run: |
-          .\.sonar\scanner\dotnet-sonarscanner begin /k:"${{ inputs.dotnetSonarProjectKey }}" /o:"${{ inputs.dotnetSonarOrganization }}" /d:sonar.login="${{ secrets.sonarToken }}" /d:sonar.host.url="https://sonarcloud.io"
-          dotnet clean
-          dotnet build
-          .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.login="${{ secrets.sonarToken }}"
-
-  # -----------------------------------------------------------------------------------------
-  # Job to run Cypress
-  # -----------------------------------------------------------------------------------------
-  cypress:
-    name: 'E2E'
-    if: |
-      always()
-      && ( inputs.cypress ) 
-      && ( github.actor != 'dependabot[bot]' )  
-      && ( github.event.pull_request.draft == false )
-      && ( needs.safeCheck.result == 'success')
-      && ( needs.nodeLint.result == 'success' || needs.nodeLint.result == 'skipped')
-      && ( needs.nodeTest.result == 'success' || needs.nodeTest.result == 'skipped')
-      && ( needs.reactTest.result == 'success' || needs.reactTest.result == 'skipped')      
-      && ( needs.nodeSonar.result == 'success' || needs.nodeSonar.result == 'skipped')
-      && ( needs.dotnetLint.result == 'success' || needs.dotnetLint.result == 'skipped')
-      && ( needs.dotnetTest.result == 'success' || needs.dotnetTest.result == 'skipped')      
-      && ( needs.dotnetSonar.result == 'success' || needs.dotnetSonar.result == 'skipped')
-    runs-on: ubuntu-latest
-    timeout-minutes: ${{ inputs.cyRunnerTimeOut }}
-    needs: [safeCheck, nodeLint, nodeTest, reactTest, nodeSonar, dotnetLint, dotnetTest, dotnetSonar]
-    concurrency:
-      group: ${{ github.workflow }}
-    steps:
-      - name: 'Trusted checkout'
-        uses: actions/checkout@v3
-        if: ( github.event.pull_request.head.repo.fork == false )
-      - name: 'Untrusted checkout'
-        uses: actions/checkout@v3
-        if: ( github.event.pull_request.head.repo.fork == true )
-      - name: 'Checkout Cy-Runner'
-        if: |
-          needs.safeCheck.outputs.substantialChanges == 'true'
-          || github.event_name == 'schedule'
-          || github.event_name == 'workflow_dispatch'
-        uses: actions/checkout@v3
-        with:
-          repository: vtex-apps/cy-runner
-          ref: ${{ inputs.cyRunnerBranch }}
-          path: cy-runner
-      - name: 'Set up NodeJS'
-        if: |
-          needs.safeCheck.outputs.substantialChanges == 'true'
-          || github.event_name == 'schedule'
-          || github.event_name == 'workflow_dispatch'
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          cache: yarn
-        continue-on-error: true
-      - name: 'Install packages'
-        if: |
-          needs.safeCheck.outputs.substantialChanges == 'true'
-          || github.event_name == 'schedule'
-          || github.event_name == 'workflow_dispatch'
-        run: |
-          echo "==> Installing root packages..."
-          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
-          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
-            # checkout-ui-custom has a bug on package.json installation, so let's skip it
-            if [[ $DIR != 'checkout-ui-custom' ]]; then
-              echo "==> Installing $DIR packages..."
-              cd "$DIR"
-              yarn install --frozen-lockfile
-              cd -
-            fi
-          done
-      - name: 'Cypress smoke test'
-        if: |
-          needs.safeCheck.outputs.substantialChanges == 'true'
-          || github.event_name == 'schedule'
-          || github.event_name == 'workflow_dispatch'
-        run: |
-          yarn cypress verify
-          yarn cypress info
-          yarn cypress run --browser chrome --quiet --project test
-        working-directory: cy-runner
-      - name: 'Manipulate secrets and clean environment'
-        if: |
-          needs.safeCheck.outputs.substantialChanges == 'true'
-          || github.event_name == 'schedule'
-          || github.event_name == 'workflow_dispatch'
-        run: |
-          echo $VTEX_QE > .VTEX_QE.json
-          rm -rf .git
-        env: 
-          VTEX_QE: ${{ secrets.cypressJSON }}        
-        working-directory: cy-runner
-      - name: 'Set up VTEX Toolbelt'
-        if: |
-          needs.safeCheck.outputs.substantialChanges == 'true'
-          || github.event_name == 'schedule'
-          || github.event_name == 'workflow_dispatch'
-        uses: vtex/action-toolbelt@v7
-        with:
-          account: productusqa
-          jsonFile: cy-runner/.VTEX_QE.json
-      - name: 'Reserve account level resources'
-        id: lock
-        if: |
-          needs.safeCheck.outputs.substantialChanges == 'true'
-          || github.event_name == 'schedule'
-          || github.event_name == 'workflow_dispatch'
-        run: |
-          CONFIG='cy-runner.yml'
-          LOCK='false'
-          if [[ -f $CONFIG ]]; then
-            if [[ $(yq '.workspace.reserveAccount.enabled' cy-runner.yml) == 'true' ]]; then            
-               LOCK='true'
-               yq -i '.workspace.reserveAccount.enabled = false' cy-runner.yml
-               node cy-runner/node/lock.js reserve
-            fi
-          fi
-          echo && echo "::set-output name=unlock::$LOCK"
-      - name: 'Run Cy-Runner'
-        if: |
-          needs.safeCheck.outputs.substantialChanges == 'true'
-          || github.event_name == 'schedule'
-          || github.event_name == 'workflow_dispatch'
-        run: node cy-runner
-        working-directory: cy-runner
-      - name: 'Anylize Cy-Runner output'
-        id: cyr
-        if: |
-          always()
-          && (needs.safeCheck.outputs.substantialChanges == 'true'
-          || github.event_name == 'schedule'
-          || github.event_name == 'workflow_dispatch')
-        run: |
-          DECORATOR='false'
-          LOGS='false'
-          [[ -f logs/_cy-decorator.txt ]] && DECORATOR='true'
-          [[ -f logs/_cy-runner.log ]] && LOGS='true'
-          echo "::set-output name=decorator::$DECORATOR"
-          echo "::set-output name=logs::$LOGS"
-        working-directory: cy-runner
-        continue-on-error: true
-      - name: 'Release account level resources'
-        if: always() && steps.lock.outputs.unlock == 'true'
-        run: node cy-runner/node/lock.js release
-        continue-on-error: true
-      - name: Comment PR
-        if: |
-          always()
-          && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target')
-          && steps.cyr.outputs.decorator == 'true'
-        uses: marocchino/sticky-pull-request-comment@v2.2.0
-        with:
-          recreate: true
-          path: cy-runner/logs/_cy-decorator.txt
-        continue-on-error: true
-      - name: Sanitize logs
-        if: always() && steps.cyr.outputs.logs == 'true'
-        run: sed -i -e /Bearer/d -e /Basic/d $(ls *.{json,yml,yaml,txt,log} | xargs)
-        working-directory: cy-runner/logs
-      - name: Create debug artifacts
-        uses: actions/upload-artifact@v3
-        if: always() && steps.cyr.outputs.logs == 'true'
-        with:
-          name: cy-runner-logs
-          path: |
-            cy-runner/logs
-            !cy-runner/logs/**/*.mp4
-          retention-days: 3
+#  # -----------------------------------------------------------------------------------------
+#  # Danger job [also detect substantial changes]
+#  # -----------------------------------------------------------------------------------------
+#  danger:
+#    name: "Danger"
+#    runs-on: ubuntu-latest
+#    timeout-minutes: 5
+#    needs: [safeCheck]
+#    steps:
+#      - name: "Trusted checkout"
+#        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
+#        if: github.event.pull_request.head.repo.fork == false
+#
+#      - name: "Untrusted checkout"
+#        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
+#        if: github.event.pull_request.head.repo.fork == true
+#        with:
+#          ref: ${{ github.event.pull_request.head.ref }}
+#          repository: ${{ github.event.pull_request.head.repo.full_name }}
+#
+#      - name: "Set up Node.js"
+#        uses: actions/setup-node@8c91899e586c5b171469028077307d293428b516 # v3.5.1
+#        with:
+#          cache: yarn
+#        continue-on-error: true
+#
+#      - name: "Install Danger.js"
+#        run: yarn global add danger@11
+#
+#      - name: "Get changed/added files"
+#        run: |
+#
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#          REQUIRE_CHANGELOG_VERSION: ${{ inputs.dangerRequireChangelog }}
+#
+#  # -----------------------------------------------------------------------------------------
+#  # Job to run Lint (Node.js)
+#  # -----------------------------------------------------------------------------------------
+#  nodeLint:
+#    name: 'Lint Node.js'
+#    if: ${{ inputs.nodeLint || inputs.nodeSonar || inputs.nodeTest}}
+#    runs-on: ubuntu-latest
+#    needs: [safeCheck]
+#    timeout-minutes: 5
+#    steps:
+#      - name: 'Trusted checkout'
+#        uses: actions/checkout@v3
+#        if: ( github.event.pull_request.head.repo.fork == false )
+#      - name: 'Untrusted checkout'
+#        uses: actions/checkout@v3
+#        if: ( github.event.pull_request.head.repo.fork == true )
+#        with:
+#          ref: ${{ github.event.pull_request.head.ref }}
+#          repository: ${{ github.event.pull_request.head.repo.full_name }}
+#      - name: 'Lint JSON'
+#        run: |
+#          FAILED=0
+#          find -name "*.json" -not -path "*/node_modules/*" -not -path "./dotnet*" | while read json; do
+#            ERROR=0
+#            jq . -cM "$json" 1>/dev/null 2>error || ERROR=1
+#            if [[ $ERROR -eq 0 ]]; then
+#              echo "OK: $json"
+#            else
+#              FAILED=1
+#              echo "ERROR: $json"
+#              MSG=$(sed 's/\(.*\) at line \(.*\), column \(.*\)$/\1;\2;\3/' error)
+#              F="$json"
+#              E="$(echo $MSG | cut -d ';' -f1)"
+#              L=$(echo $MSG | cut -d ';' -f2)
+#              C=$(echo $MSG | cut -d ';' -f3)
+#              echo "::error file=$F,line=$L,col=$C::$E"
+#            fi
+#          done
+#          if [[ $FAILED -eq 1 ]]; then
+#            exit 1;
+#          fi
+#      - name: 'Set up Node.js'
+#        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'push' )
+#        uses: actions/setup-node@v3
+#        with:
+#          node-version: 16
+#          cache: yarn
+#        continue-on-error: true
+#      - name: 'Install packages'
+#        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'push' )
+#        run: |
+#          echo "==> Installing root packages..."
+#          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+#          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
+#            # checkout-ui-custom has a bug on package.json installation, so let's skip it
+#            if [[ $DIR != 'checkout-ui-custom' ]]; then
+#              echo "==> Installing $DIR packages..."
+#              cd "$DIR"
+#              yarn install --frozen-lockfile
+#              cd -
+#            fi
+#          done
+#      - name: 'Run lint'
+#        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'push' )
+#        run: yarn lint
+#
+#  # -----------------------------------------------------------------------------------------
+#  # Job to run tests (Node.js on node folder)
+#  # -----------------------------------------------------------------------------------------
+#  nodeTest:
+#    name: 'Test Node.js'
+#    if: ${{ inputs.nodeTest }}
+#    runs-on: ubuntu-latest
+#    needs: [safeCheck]
+#    timeout-minutes: 5
+#    steps:
+#      - name: 'Trusted checkout'
+#        uses: actions/checkout@v3
+#        if: ( github.event.pull_request.head.repo.fork == false )
+#      - name: 'Untrusted checkout'
+#        uses: actions/checkout@v3
+#        if: ( github.event.pull_request.head.repo.fork == true )
+#        with:
+#          ref: ${{ github.event.pull_request.head.ref }}
+#          repository: ${{ github.event.pull_request.head.repo.full_name }}
+#      - name: 'Set up Node.js'
+#        uses: actions/setup-node@v3
+#        with:
+#          node-version: 16
+#          cache: yarn
+#        continue-on-error: true
+#      - name: 'Install dependencies'
+#        run: |
+#          echo "==> Installing root packages..."
+#          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+#          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
+#            # checkout-ui-custom has a bug on package.json installation, so let's skip it
+#            if [[ $DIR != 'checkout-ui-custom' ]]; then
+#              echo "==> Installing $DIR packages..."
+#              cd "$DIR"
+#              yarn install --frozen-lockfile
+#              cd -
+#            fi
+#          done
+#      - name: 'Run unit tests on node folder'
+#        run: yarn test --coverage
+#        working-directory: node
+#
+#  # -----------------------------------------------------------------------------------------
+#  # Job to run tests (Node.js on react folder)
+#  # -----------------------------------------------------------------------------------------
+#  reactTest:
+#    name: 'Test React'
+#    if: ${{ inputs.reactTest }}
+#    runs-on: ubuntu-latest
+#    needs: [safeCheck]
+#    timeout-minutes: 5
+#    steps:
+#      - name: 'Trusted checkout'
+#        uses: actions/checkout@v3
+#        if: ( github.event.pull_request.head.repo.fork == false )
+#      - name: 'Untrusted checkout'
+#        uses: actions/checkout@v3
+#        if: ( github.event.pull_request.head.repo.fork == true )
+#        with:
+#          ref: ${{ github.event.pull_request.head.ref }}
+#          repository: ${{ github.event.pull_request.head.repo.full_name }}
+#      - name: 'Set up Node.js'
+#        uses: actions/setup-node@v3
+#        with:
+#          node-version: 16
+#          cache: yarn
+#        continue-on-error: true
+#      - name: 'Install dependencies'
+#        run: |
+#          echo "==> Installing root packages..."
+#          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+#          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
+#            # checkout-ui-custom has a bug on package.json installation, so let's skip it
+#            if [[ $DIR != 'checkout-ui-custom' ]]; then
+#              echo "==> Installing $DIR packages..."
+#              cd "$DIR"
+#              yarn install --frozen-lockfile
+#              cd -
+#            fi
+#          done
+#      - name: 'Run unit tests on react folder'
+#        run: yarn test --coverage
+#        working-directory: react
+#
+#  # -----------------------------------------------------------------------------------------
+#  # Job to run SonarCloud (Node.js)
+#  # -----------------------------------------------------------------------------------------
+#  nodeSonar:
+#    name: 'Scan Node.js'
+#    if: |
+#      always()
+#      && ( inputs.nodeSonar )
+#      && ( github.actor != 'dependabot[bot]' )
+#      && ( github.event.pull_request.draft == false )
+#      && ( needs.safeCheck.result == 'success')
+#      && ( needs.nodeLint.result == 'success' || needs.nodeLint.result == 'skipped')
+#      && ( needs.nodeTest.result == 'success' || needs.nodeTest.result == 'skipped')
+#      && ( needs.reactTest.result == 'success' || needs.reactTest.result == 'skipped')
+#    runs-on: ubuntu-latest
+#    needs: [safeCheck, nodeLint, nodeTest, reactTest]
+#    timeout-minutes: 5
+#    concurrency:
+#      group: ${{ github.workflow }}-${{ github.ref }}-nodejs
+#    steps:
+#      - name: 'Trusted checkout'
+#        uses: actions/checkout@v3
+#        if: ( github.event.pull_request.head.repo.fork == false )
+#        with:
+#          fetch-depth: 0
+#      - name: 'Untrusted checkout'
+#        uses: actions/checkout@v3
+#        if: ( github.event.pull_request.head.repo.fork == true )
+#        with:
+#          ref: ${{ github.event.pull_request.head.ref }}
+#          repository: ${{ github.event.pull_request.head.repo.full_name }}
+#          fetch-depth: 0
+#      - name: 'Set up Node.js'
+#        uses: actions/setup-node@v3
+#        with:
+#          node-version: 16
+#          cache: yarn
+#        continue-on-error: true
+#      - name: 'Install packages'
+#        run: |
+#          echo "==> Installing root packages..."
+#          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+#          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
+#            # checkout-ui-custom has a bug on package.json installation, so let's skip it
+#            if [[ $DIR != 'checkout-ui-custom' ]]; then
+#              echo "==> Installing $DIR packages..."
+#              cd "$DIR"
+#              yarn install --frozen-lockfile
+#              cd -
+#            fi
+#          done
+#      - name: 'Gererate Node coverage report'
+#        if: ${{ inputs.nodeTest }}
+#        run: yarn test --coverage
+#        working-directory: node
+#      - name: 'Gererate React coverage report'
+#        if: ${{ inputs.reactTest }}
+#        run: yarn test --coverage
+#        working-directory: react
+#      - name: 'Trusted SonarCloud Scan'
+#        if: ( github.event.pull_request.head.repo.fork == false )
+#        uses: SonarSource/sonarcloud-github-action@v1.7
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.githubToken }}
+#          SONAR_TOKEN: ${{ secrets.sonarToken }}
+#        with:
+#          args: >
+#            -Dsonar.projectKey=${{ inputs.nodeSonarProjectKey }}
+#            -Dsonar.organization=${{ inputs.nodeSonarOrganization }}
+#      - name: 'Untrusted SonarCloud Scan'
+#        if: ( github.event.pull_request.head.repo.fork == true )
+#        uses: SonarSource/sonarcloud-github-action@v1.7
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.githubToken }}
+#          SONAR_TOKEN: ${{ secrets.sonarToken }}
+#        with:
+#          args: >
+#            -Dsonar.projectKey=${{ inputs.nodeSonarProjectKey }}
+#            -Dsonar.organization=${{ inputs.nodeSonarOrganization }}
+#            -Dsonar.pullrequest.key=${{ github.event.pull_request.number }}
+#            -Dsonar.pullrequest.branch=${{ github.event.pull_request.head.ref }}
+#            -Dsonar.scm.revision=${{ github.event.pull_request.head.sha }}
+#      - name: 'Process SonarCloud results'
+#        working-directory: .scannerwork
+#        run: |
+#          TASK_URL=$(sed -nr 's/ceTaskUrl=(.*)/\1/p' report-task.txt)
+#          STATUS='FAILURE'
+#          MAX_TRY=3
+#          TRY=1
+#          while [[ $STATUS != 'SUCCESS' && $TRY -le $MAX_TRY ]]; do
+#            echo -n "Trying to get status from SonarCloud ($TRY of $MAX_TRY)... "
+#            sleep 5
+#            STATUS=$(curl -s -u $SONAR_TOKEN: $TASK_URL | jq .task.status | sed s/\"//g)
+#            echo "$STATUS."
+#            TRY=$(( $TRY + 1 ))
+#          done
+#          if [[ $STATUS == 'SUCCESS' ]]; then
+#            echo -n "Trying to get analysis ID from SonarCloud... "
+#            sleep 5
+#            ANALISYS_ID=$(curl -s -u $SONAR_TOKEN: $TASK_URL | jq -r .task.analysisId)
+#            echo "$ANALISYS_ID."
+#            TRY=1
+#            GATE_API='https://sonarcloud.io/api/qualitygates'
+#            while [[ $GATE_STATUS != 'OK' &&  $GATE_STATUS != 'ERROR' ]]; do
+#              echo -n "Checking Quality Gate info ($TRY)... "
+#              sleep 5
+#              GATE_STATUS=$(curl -s -u $SONAR_TOKEN: "$GATE_API/project_status?analysisId=${ANALISYS_ID}" | jq -r .projectStatus.status)
+#              echo "$GATE_STATUS."
+#             TRY=$(( $TRY + 1 ))
+#            done
+#            if [[ $GATE_STATUS == 'OK' ]]; then
+#              exit 0
+#            else
+#              echo 'The quality gate failed. Please, review the reasons on SonarCloud!'
+#              exit 1
+#            fi
+#          else
+#            echo 'The analisys failed. Please, review your settings and sonar token!'
+#            exit 1
+#          fi
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.githubToken }}
+#          SONAR_TOKEN: ${{ secrets.sonarToken }}
+#
+#
+#  # -----------------------------------------------------------------------------------------
+#  # Job to run Lint (.Net)
+#  # -----------------------------------------------------------------------------------------
+#  dotnetLint:
+#    name: 'Lint .Net'
+#    if: ( inputs.dotnetLint ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
+#    runs-on: ubuntu-latest
+#    needs: [safeCheck]
+#    timeout-minutes: 10
+#    steps:
+#      - name: 'Trusted checkout'
+#        uses: actions/checkout@v3
+#        if: ( github.event.pull_request.head.repo.fork == false )
+#      - name: 'Untrusted checkout'
+#        uses: actions/checkout@v3
+#        if: ( github.event.pull_request.head.repo.fork == true )
+#        with:
+#          ref: ${{ github.event.pull_request.head.ref }}
+#          repository: ${{ github.event.pull_request.head.repo.full_name }}
+#      - name: 'Lint JSON'
+#        run: |
+#          FAILED=0
+#          find -name "*.json" -not -path "./react*" -not -path "./node*" | while read json; do
+#            ERROR=0
+#            jq . -cM "$json" 1>/dev/null 2>error || ERROR=1
+#            if [[ $ERROR -eq 0 ]]; then
+#              echo "OK: $json"
+#            else
+#              FAILED=1
+#              echo "ERROR: $json"
+#              MSG=$(sed 's/\(.*\) at line \(.*\), column \(.*\)$/\1;\2;\3/' error)
+#              F="$json"
+#              E="$(echo $MSG | cut -d ';' -f1)"
+#              L=$(echo $MSG | cut -d ';' -f2)
+#              C=$(echo $MSG | cut -d ';' -f3)
+#              echo "::error file=$F,line=$L,col=$C::$E"
+#            fi
+#          done
+#          if [[ $FAILED -eq 1 ]]; then
+#            exit 1;
+#          fi
+#      - name: Setup .Net
+#        uses: actions/setup-dotnet@v1
+#        with:
+#          dotnet-version: ${{ inputs.dotnetVersion }}
+#      - name: Install dependencies
+#        run: dotnet restore
+#      - name: Build
+#        run: dotnet build --configuration Release --no-restore
+#        working-directory: dotnet
+#
+#  # -----------------------------------------------------------------------------------------
+#  # Job to run Tests (.Net)
+#  # -----------------------------------------------------------------------------------------
+#  dotnetTest:
+#    name: 'Test .Net'
+#    if: ( inputs.dotnetTest ) && ( github.actor != 'dependabot[bot]' )  && ( github.event.pull_request.draft == false )
+#    runs-on: ubuntu-latest
+#    timeout-minutes: 10
+#    needs: [safeCheck]
+#    steps:
+#      - name: 'Trusted checkout'
+#        uses: actions/checkout@v3
+#        if: ( github.event.pull_request.head.repo.fork == false )
+#      - name: 'Untrusted checkout'
+#        uses: actions/checkout@v3
+#        if: ( github.event.pull_request.head.repo.fork == true )
+#        with:
+#          ref: ${{ github.event.pull_request.head.ref }}
+#          repository: ${{ github.event.pull_request.head.repo.full_name }}
+#      - name: Setup .Net
+#        uses: actions/setup-dotnet@v1
+#        with:
+#          dotnet-version: ${{ inputs.dotnetVersion }}
+#      - name: Install dependencies
+#        run: dotnet restore
+#      - name: Build
+#        run: dotnet build --configuration Release --no-restore &> /dev/null
+#      - name: Test
+#        run: dotnet test --no-restore --verbosity normal
+#
+#  # -----------------------------------------------------------------------------------------
+#  # Job to run SonarCloud (.Net)
+#  # -----------------------------------------------------------------------------------------
+#  dotnetSonar:
+#    name: 'Scan .Net'
+#    if: |
+#      always()
+#      && ( inputs.dotnetSonar )
+#      && ( github.actor != 'dependabot[bot]' )
+#      && ( github.event.pull_request.draft == false )
+#      && ( needs.safeCheck.result == 'success')
+#      && ( needs.dotnetLint.result == 'success' || needs.dotnetLint.result == 'skipped')
+#      && ( needs.dotnetTest.result == 'success' || needs.dotnetTest.result == 'skipped')
+#    runs-on: windows-latest
+#    timeout-minutes: 10
+#    needs: [safeCheck, dotnetLint, dotnetTest]
+#    concurrency:
+#      group: ${{ github.workflow }}-${{ github.ref }}-dotNet
+#    steps:
+#      - name: Set up JDK 11
+#        uses: actions/setup-java@v1
+#        with:
+#          java-version: 1.11
+#      - name: 'Trusted checkout'
+#        uses: actions/checkout@v3
+#        if: ( github.event.pull_request.head.repo.fork == false )
+#        with:
+#          fetch-depth: 0
+#      - name: 'Untrusted checkout'
+#        uses: actions/checkout@v3
+#        if: ( github.event.pull_request.head.repo.fork == true )
+#        with:
+#          ref: ${{ github.event.pull_request.head.ref }}
+#          repository: ${{ github.event.pull_request.head.repo.full_name }}
+#          fetch-depth: 0
+#      - name: Cache SonarCloud packages
+#        uses: actions/cache@v1
+#        with:
+#          path: ~\sonar\cache
+#          key: ${{ runner.os }}-sonar-vtex
+#          restore-keys: ${{ runner.os }}-sonar-vtex
+#      - name: Cache SonarCloud scanner
+#        id: cache-sonar-scanner
+#        uses: actions/cache@v1
+#        with:
+#          path: .\.sonar\scanner
+#          key: ${{ runner.os }}-sonar-scanner-vtex
+#          restore-keys: ${{ runner.os }}-sonar-scanner-vtex
+#      - name: Install SonarCloud scanner
+#        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+#        shell: powershell
+#        run: |
+#          New-Item -Path .\.sonar\scanner -ItemType Directory
+#          dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
+#      - name: Build and analyze
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.githubToken }}
+#          SONAR_TOKEN: ${{ secrets.sonarToken }}
+#        shell: powershell
+#        run: |
+#          .\.sonar\scanner\dotnet-sonarscanner begin /k:"${{ inputs.dotnetSonarProjectKey }}" /o:"${{ inputs.dotnetSonarOrganization }}" /d:sonar.login="${{ secrets.sonarToken }}" /d:sonar.host.url="https://sonarcloud.io"
+#          dotnet clean
+#          dotnet build
+#          .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.login="${{ secrets.sonarToken }}"
+#
+#  # -----------------------------------------------------------------------------------------
+#  # Job to run Cypress
+#  # -----------------------------------------------------------------------------------------
+#  cypress:
+#    name: 'E2E'
+#    if: |
+#      always()
+#      && ( inputs.cypress )
+#      && ( github.actor != 'dependabot[bot]' )
+#      && ( github.event.pull_request.draft == false )
+#      && ( needs.safeCheck.result == 'success')
+#      && ( needs.nodeLint.result == 'success' || needs.nodeLint.result == 'skipped')
+#      && ( needs.nodeTest.result == 'success' || needs.nodeTest.result == 'skipped')
+#      && ( needs.reactTest.result == 'success' || needs.reactTest.result == 'skipped')
+#      && ( needs.nodeSonar.result == 'success' || needs.nodeSonar.result == 'skipped')
+#      && ( needs.dotnetLint.result == 'success' || needs.dotnetLint.result == 'skipped')
+#      && ( needs.dotnetTest.result == 'success' || needs.dotnetTest.result == 'skipped')
+#      && ( needs.dotnetSonar.result == 'success' || needs.dotnetSonar.result == 'skipped')
+#    runs-on: ubuntu-latest
+#    timeout-minutes: ${{ inputs.cyRunnerTimeOut }}
+#    needs: [safeCheck, nodeLint, nodeTest, reactTest, nodeSonar, dotnetLint, dotnetTest, dotnetSonar]
+#    concurrency:
+#      group: ${{ github.workflow }}
+#    steps:
+#      - name: 'Trusted checkout'
+#        uses: actions/checkout@v3
+#        if: ( github.event.pull_request.head.repo.fork == false )
+#      - name: 'Untrusted checkout'
+#        uses: actions/checkout@v3
+#        if: ( github.event.pull_request.head.repo.fork == true )
+#      - name: 'Checkout Cy-Runner'
+#        if: |
+#          needs.safeCheck.outputs.substantialChanges == 'true'
+#          || github.event_name == 'schedule'
+#          || github.event_name == 'workflow_dispatch'
+#        uses: actions/checkout@v3
+#        with:
+#          repository: vtex-apps/cy-runner
+#          ref: ${{ inputs.cyRunnerBranch }}
+#          path: cy-runner
+#      - name: 'Set up NodeJS'
+#        if: |
+#          needs.safeCheck.outputs.substantialChanges == 'true'
+#          || github.event_name == 'schedule'
+#          || github.event_name == 'workflow_dispatch'
+#        uses: actions/setup-node@v3
+#        with:
+#          node-version: 16
+#          cache: yarn
+#        continue-on-error: true
+#      - name: 'Install packages'
+#        if: |
+#          needs.safeCheck.outputs.substantialChanges == 'true'
+#          || github.event_name == 'schedule'
+#          || github.event_name == 'workflow_dispatch'
+#        run: |
+#          echo "==> Installing root packages..."
+#          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+#          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
+#            # checkout-ui-custom has a bug on package.json installation, so let's skip it
+#            if [[ $DIR != 'checkout-ui-custom' ]]; then
+#              echo "==> Installing $DIR packages..."
+#              cd "$DIR"
+#              yarn install --frozen-lockfile
+#              cd -
+#            fi
+#          done
+#      - name: 'Cypress smoke test'
+#        if: |
+#          needs.safeCheck.outputs.substantialChanges == 'true'
+#          || github.event_name == 'schedule'
+#          || github.event_name == 'workflow_dispatch'
+#        run: |
+#          yarn cypress verify
+#          yarn cypress info
+#          yarn cypress run --browser chrome --quiet --project test
+#        working-directory: cy-runner
+#      - name: 'Manipulate secrets and clean environment'
+#        if: |
+#          needs.safeCheck.outputs.substantialChanges == 'true'
+#          || github.event_name == 'schedule'
+#          || github.event_name == 'workflow_dispatch'
+#        run: |
+#          echo $VTEX_QE > .VTEX_QE.json
+#          rm -rf .git
+#        env:
+#          VTEX_QE: ${{ secrets.cypressJSON }}
+#        working-directory: cy-runner
+#      - name: 'Set up VTEX Toolbelt'
+#        if: |
+#          needs.safeCheck.outputs.substantialChanges == 'true'
+#          || github.event_name == 'schedule'
+#          || github.event_name == 'workflow_dispatch'
+#        uses: vtex/action-toolbelt@v7
+#        with:
+#          account: productusqa
+#          jsonFile: cy-runner/.VTEX_QE.json
+#      - name: 'Reserve account level resources'
+#        id: lock
+#        if: |
+#          needs.safeCheck.outputs.substantialChanges == 'true'
+#          || github.event_name == 'schedule'
+#          || github.event_name == 'workflow_dispatch'
+#        run: |
+#          CONFIG='cy-runner.yml'
+#          LOCK='false'
+#          if [[ -f $CONFIG ]]; then
+#            if [[ $(yq '.workspace.reserveAccount.enabled' cy-runner.yml) == 'true' ]]; then
+#               LOCK='true'
+#               yq -i '.workspace.reserveAccount.enabled = false' cy-runner.yml
+#               node cy-runner/node/lock.js reserve
+#            fi
+#          fi
+#          echo && echo "::set-output name=unlock::$LOCK"
+#      - name: 'Run Cy-Runner'
+#        if: |
+#          needs.safeCheck.outputs.substantialChanges == 'true'
+#          || github.event_name == 'schedule'
+#          || github.event_name == 'workflow_dispatch'
+#        run: node cy-runner
+#        working-directory: cy-runner
+#      - name: 'Analyze Cy-Runner output'
+#        id: cyr
+#        if: |
+#          always()
+#          && (needs.safeCheck.outputs.substantialChanges == 'true'
+#          || github.event_name == 'schedule'
+#          || github.event_name == 'workflow_dispatch')
+#        run: |
+#          DECORATOR='false'
+#          LOGS='false'
+#          [[ -f logs/_cy-decorator.txt ]] && DECORATOR='true'
+#          [[ -f logs/_cy-runner.log ]] && LOGS='true'
+#          echo "::set-output name=decorator::$DECORATOR"
+#          echo "::set-output name=logs::$LOGS"
+#        working-directory: cy-runner
+#        continue-on-error: true
+#      - name: 'Release account level resources'
+#        if: always() && steps.lock.outputs.unlock == 'true'
+#        run: node cy-runner/node/lock.js release
+#        continue-on-error: true
+#      - name: Comment PR
+#        if: |
+#          always()
+#          && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target')
+#          && steps.cyr.outputs.decorator == 'true'
+#        uses: marocchino/sticky-pull-request-comment@97bddef64db61b9d80edc69593cc4e4c415c3362 # v2.2.1
+#        with:
+#          recreate: true
+#          path: cy-runner/logs/_cy-decorator.txt
+#        continue-on-error: true
+#      - name: Sanitize logs
+#        if: always() && steps.cyr.outputs.logs == 'true'
+#        run: sed -i -e /Bearer/d -e /Basic/d $(ls *.{json,yml,yaml,txt,log} | xargs)
+#        working-directory: cy-runner/logs
+#      - name: Create debug artifacts
+#        uses: actions/upload-artifact@v3
+#        if: always() && steps.cyr.outputs.logs == 'true'
+#        with:
+#          name: cy-runner-logs
+#          path: |
+#            cy-runner/logs
+#            !cy-runner/logs/**/*.mp4
+#          retention-days: 3
