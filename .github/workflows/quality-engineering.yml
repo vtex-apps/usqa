@@ -201,8 +201,9 @@ jobs:
             CHANGED="changed.js"
             echo "const code = danger.git.fileMatch('dotnet/**', 'react/**', 'node/**', '**/*.js', "  > $CHANGED
             echo "                                  'messages/en.json', 'messages/en-us.json')     " >> $CHANGED
-            echo "if (code.modified || code.created || code.deleted || code.edited) message('yes') " >> $CHANGED
-            CHECK=$(danger ci --text-only --dangerfile $CHANGED | grep yes)
+            echo "if (code.modified || code.created || code.deleted || code.edited) message('YES') " >> $CHANGED
+            danger ci --text-only --dangerfile $CHANGED | tee danger.out
+            CHECK=$(grep YES danger.out)
             [[ -z $CHECK ]] && echo "changed=false" >> $GITHUB_OUTPUT
           fi
 
