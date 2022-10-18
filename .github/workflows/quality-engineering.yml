@@ -189,7 +189,9 @@ jobs:
         continue-on-error: true
 
       - name: "Install Danger.js"
-        run: yarn global add danger@11
+        run: |
+          echo "::group::Test"
+          yarn global add danger@11
 
       - name: "Get changed/added files"
         id: code
@@ -208,6 +210,8 @@ jobs:
             [[ -z $CHECK ]] && CHANGED=false
           fi
           echo "changed=$CHANGED" >> $GITHUB_OUTPUT
+          echo "::endgroup::"
+
 
 #      - name: "Debug"
 #        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debugEnabled }}
