@@ -1,13 +1,13 @@
 name: "[QE] Quality Engineering"
 on:
-  # Just to make easier debug typos
-  workflow_dispatch:
-    inputs:
-      debugEnabled:
-        description: "Run the build with tmate debugging enabled"
-        type: boolean
-        required: false
-        default: false
+#  # Just to make easier debug typos
+#  workflow_dispatch:
+#    inputs:
+#      debugEnabled:
+#        description: "Run the build with tmate debugging enabled"
+#        type: boolean
+#        required: false
+#        default: false
   # Allow this to be called by others
   workflow_call:
     inputs:
@@ -199,19 +199,19 @@ jobs:
           echo "changed=true" > $GITHUB_OUTPUT
           if [[ ${{ github.event.pull_request.head.repo.fork }} == 'false' ]]; then
             CHANGED="changed.js"
-            echo "import { message, danger } from 'danger'                                        "  > $CHANGED
-            echo "const code = danger.git.fileMatch('dotnet/**', 'react/**', 'node/**',           " >> $CHANGED
-            echo "                                  'messages/en.json', 'messages/en-us.json')    " >> $CHANGED
-            echo "if (code.modified || code.created || code.deleted || code.edited) message('yes')" >> $CHANGED
+            echo "import { message, danger } from 'danger'                                         "  > $CHANGED
+            echo "const code = danger.git.fileMatch('dotnet/**', 'react/**', 'node/**', '**/*.js', " >> $CHANGED
+            echo "                                  'messages/en.json', 'messages/en-us.json')     " >> $CHANGED
+            echo "if (code.modified || code.created || code.deleted || code.edited) message('yes') " >> $CHANGED
             danger ci --text-only --dangerfile $CHANGED
           fi
 
-      - name: "Debug"
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debugEnabled }}
-        timeout-minutes: 5
-        uses: mxschmitt/action-tmate@28f608baaa037465aa887c21a7924e9e6b66a9e0 # v3.13
-        with:
-          limit-access-to-actor: true
+#      - name: "Debug"
+#        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debugEnabled }}
+#        timeout-minutes: 5
+#        uses: mxschmitt/action-tmate@28f608baaa037465aa887c21a7924e9e6b66a9e0 # v3.13
+#        with:
+#          limit-access-to-actor: true
 
 #            CHECK=$(danger ci --text-only --dangerfile $CHANGED | grep yes)
 #            [[ -z $CHECK ]] && echo "changed=false" > $GITHUB_OUTPUT
