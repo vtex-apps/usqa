@@ -165,9 +165,8 @@ jobs:
       - name: "Remove the label 'safe to test' to avoid run again on changed code"
         if: contains(github.event.pull_request.labels.*.name, 'safe to test')
         run: |
-          curl -sfX DELETE -H 'Accept: application/vnd.github.v3+json' \
-          -H 'Authorization: token ${{ secrets.githubToken }}' \
-          'https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.number }}/labels/safe%20to%20test'
+          curl -sfX DELETE -H 'Accept: application/vnd.github.v3+json' -H 'Authorization: token ${{ secrets.githubToken }}' \
+          'https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.number }}/labels/safe%20to%20test' &> /dev/null
 
       - name: "Trusted checkout"
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
