@@ -198,9 +198,9 @@ jobs:
         run: |
           CHANGED=true
           if [[ ${{ github.event.pull_request.head.repo.fork }} == false ]]; then
-            echo "const code = danger.git.fileMatch('dotnet/**', 'react/**', 'node/**', '**/*.js', "  > danger.js
-            echo "                                  'messages/en.json', 'messages/en-us.json')     " >> danger.js
-            echo "if (code.modified || code.created || code.deleted || code.edited) message('YES') " >> danger.js
+            echo "const code = danger.git.fileMatch('dotnet/**', 'react/**', 'node/**', '**/*.js',   "  > danger.js
+            echo "             '**/*.ts', 'package.json', 'messages/en.json', 'messages/en-us.json') " >> danger.js
+            echo "if (code.modified || code.created || code.deleted || code.edited) message('YES')   " >> danger.js
             danger-ci -ftd danger.js | tee danger.out
           fi
           if [[ -f danger.out ]]; then 
@@ -208,7 +208,6 @@ jobs:
             [[ -z $CHECK ]] && CHANGED=false
           fi
           echo "changed=$CHANGED" >> $GITHUB_OUTPUT
-
 
 #      - name: "Debug"
 #        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debugEnabled }}
