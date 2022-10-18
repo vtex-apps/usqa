@@ -145,9 +145,7 @@ jobs:
           message: |
             ### Security check
             
-            💡 Thank you for submitting your contribution to this repository! To avoid bugs and security issues, 
-            your code must pass on our quality engineering workflow. To start the tests, please, ask one VTEXer 
-            to read your code and add `safe to test` label. 
+            💡 Thank you for submitting your contribution to this repository! To avoid bugs and security issues, your code must pass on our quality engineering workflow. To start the tests, please, ask one VTEXer to read your code and add `safe to test` label. 
             
             Remember: If you do any changes after the approval, someone from VTEX needs to redo the label thing.
 
