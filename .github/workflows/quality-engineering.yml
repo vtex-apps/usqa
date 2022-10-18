@@ -201,7 +201,7 @@ jobs:
             echo "const code = danger.git.fileMatch('dotnet/**', 'react/**', 'node/**',           " >> $CHANGED
             echo "                                  'messages/en.json', 'messages/en-us.json')    " >> $CHANGED
             echo "if (code.modified || code.created || code.deleted || code.edited) message('yes')" >> $CHANGED
-            CHECK=$(danger pr --text-only --dangerfile $CHANGED | grep yes)
+            CHECK=$(danger ci --text-only --dangerfile $CHANGED | grep yes)
             [[ -z $CHECK ]] && echo "changed=false" > $GITHUB_OUTPUT
           fi
 
