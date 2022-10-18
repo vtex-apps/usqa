@@ -192,6 +192,7 @@ jobs:
         run: |
           echo "::group::Test"
           yarn global add danger@11
+          echo '::warning:: This is a warning message, to demonstrate that commands are being processed.'
 
       - name: "Get changed/added files"
         id: code
@@ -210,6 +211,7 @@ jobs:
             [[ -z $CHECK ]] && CHANGED=false
           fi
           echo "changed=$CHANGED" >> $GITHUB_OUTPUT
+          echo '::warning:: This is a warning message, to demonstrate that commands are being processed.'
           echo "::endgroup::"
 
 
