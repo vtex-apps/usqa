@@ -143,7 +143,7 @@ jobs:
           header: securityCheck
           recreate: true
           message: |
-            ### Security check
+            ### Security check failed
             
             💡 Thank you for submitting your contribution to this repository! To avoid bugs and security issues, your code must pass on our quality engineering workflow. To start the tests, please, ask one VTEXer to read your code and add `safe to test` label. 
             
@@ -164,10 +164,12 @@ jobs:
 
       - name: "Remove the label 'safe to test' to avoid run again on changed code"
         if: contains(github.event.pull_request.labels.*.name, 'safe to test')
-        uses: actions-ecosystem/action-remove-labels@2ce5d41b4b6aa8503e285553f75ed56e0a40bae0 # v1.3.0
-        with:
-          labels: safe to test
-          GITHUB_TOKEN: ${{ secrets.githubToken }}
+        run: |
+          curl --silent --fail-with-body \
+            -X DELETE \
+            -H 'Accept: application/vnd.github.v3+json' \
+            -H 'Authorization: token ${{ secrets.githubToken }}' \
+            'https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.number }}/labels/safe%20to%20test'
 
       - name: "Trusted checkout"
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
