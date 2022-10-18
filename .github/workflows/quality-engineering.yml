@@ -204,7 +204,7 @@ jobs:
             danger-ci -ftd danger.js | tee danger.out
           fi
           if [[ -f danger.out ]]; then 
-            CHECK=$(grep 'YES' danger.out);
+            CHECK=$(grep 'YES' danger.out)
             [[ -z $CHECK ]] && CHANGED=false
           fi
           echo "changed=$CHANGED" >> $GITHUB_OUTPUT
