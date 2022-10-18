@@ -188,8 +188,8 @@ jobs:
           cache: yarn
         continue-on-error: true
 
-#      - name: "Install Danger.js"
-#        run: yarn global add danger@11
+      - name: "Install Danger.js"
+        run: yarn global add danger@11
 
       - name: "Get changed/added files"
         id: code
