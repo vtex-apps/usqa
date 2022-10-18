@@ -201,12 +201,13 @@ jobs:
             echo "const code = danger.git.fileMatch('dotnet/**', 'react/**', 'node/**', '**/*.js', "  > danger.js
             echo "                                  'messages/en.json', 'messages/en-us.json')     " >> danger.js
             echo "if (code.modified || code.created || code.deleted || code.edited) message('YES') " >> danger.js
-            danger ci --text-only --dangerfile danger.js | tee danger.out
-            CHECK=$(grep YES danger.out)
-            if [[ -z $CHECK ]]; then CHANGED=false; fi
+            danger-ci -ftd danger.js | tee danger.out
           fi
           cat danger.out
           echo "changed=$CHANGED" >> $GITHUB_OUTPUT
+
+#            CHECK=$(grep YES danger.out)
+#            if [[ -z $CHECK ]]; then CHANGED=false; fi
 
 #      - name: "Debug"
 #        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debugEnabled }}
