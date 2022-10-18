@@ -199,7 +199,7 @@ jobs:
             CHANGED="changed.js"
             echo "const { danger } = require("danger")"                                              > $CHANGES
             echo "const code = danger.git.fileMatch('dotnet/**', 'react/**', 'node/**',             >> $CHANGES
-            echo "                                  'messages/en.json', 'messages/en-us.json')      >> $CHANGES
+            echo "                                  'messages/en.json', 'messages/en-us.json')"     >> $CHANGES
             echo "if (code.modified || code.created || code.deleted || code.edited) message("yes")  >> $CHANGES
             CHECK=$(danger pr --text-only --dangerfile $CHANGED | grep yes)
             [[ -z $CHECK ]] && echo "changed=false" > $GITHUB_OUTPUT
