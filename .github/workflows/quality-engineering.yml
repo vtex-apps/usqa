@@ -143,13 +143,11 @@ jobs:
           header: securityCheck
           recreate: true
           message: |
-            # Security check
-            💡 ${{ env.GITHUB_ACTOR }}, thank you for submitting your contribution on this repository!
-            
-            Your ${{ env.GITHUB_HEAD_REF }} must pass on our Quality Engineering process before get merged.
-            Please, ask someone from VTEX to read your changes and add the label  `safe to test` on your PR.
-            
-            If you do any changes after the approval, someone from VTEX needs to redo the label thing.
+            ### Security check
+            😍 Hey, ${{ GITHUB_ACTOR }}, thank you for submitting your contribution to this repository!
+            🐛 To avoid bugs and security issues, your code must pass on our quality engineering workflow.
+            🧪 To start the tests, please, ask one VTEXer to read your code and add `safe to test` label.
+            💡 If you do any changes after the approval, someone from VTEX needs to redo the label thing.
 
       - name: "Fail if outside without 'safe to test' label"
         if: |
