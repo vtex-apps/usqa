@@ -144,10 +144,12 @@ jobs:
           recreate: true
           message: |
             ### Security check
-            😍 Hey, $GITHUB_ACTOR, thank you for submitting your contribution to this repository!
-            🐛 To avoid bugs and security issues, your code must pass on our quality engineering workflow.
-            🧪 To start the tests, please, ask one VTEXer to read your code and add `safe to test` label.
-            💡 If you do any changes after the approval, someone from VTEX needs to redo the label thing.
+            
+            💡 Thank you for submitting your contribution to this repository! To avoid bugs and security issues, 
+            your code must pass on our quality engineering workflow. To start the tests, please, ask one VTEXer 
+            to read your code and add `safe to test` label. 
+            
+            Remember: If you do any changes after the approval, someone from VTEX needs to redo the label thing.
 
       - name: "Fail if outside without 'safe to test' label"
         if: |
