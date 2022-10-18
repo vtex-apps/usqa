@@ -203,7 +203,10 @@ jobs:
             echo "if (code.modified || code.created || code.deleted || code.edited) message('YES') " >> danger.js
             danger-ci -ftd danger.js | tee danger.out
           fi
-          cat danger.out
+          if [[ -f danger.out ]]; then 
+            CHECK=$(grep 'YES' danger.out);
+            [[ -z $CHECK ]] && CHANGED=false
+          fi
           echo "changed=$CHANGED" >> $GITHUB_OUTPUT
 
 #            CHECK=$(grep YES danger.out)
