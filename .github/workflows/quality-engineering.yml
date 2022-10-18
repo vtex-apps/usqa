@@ -197,7 +197,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
         run: |
           echo "changed=true" >> $GITHUB_OUTPUT
-          if [[ ${{ github.event.pull_request.head.repo.fork }} == 'false' ]]; then
+          if [[ ${{ github.event.pull_request.head.repo.fork }} == false ]]; then
             CHANGED="changed.js"
             echo "const code = danger.git.fileMatch('dotnet/**', 'react/**', 'node/**', '**/*.js', "  > $CHANGED
             echo "                                  'messages/en.json', 'messages/en-us.json')     " >> $CHANGED
@@ -205,7 +205,6 @@ jobs:
             CHECK=$(danger ci --text-only --dangerfile $CHANGED | grep yes)
             [[ -z $CHECK ]] && echo "changed=false" >> $GITHUB_OUTPUT
           fi
-          cat $GITHUB_OUTPUT
 
 #      - name: "Debug"
 #        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debugEnabled }}
