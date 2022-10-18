@@ -203,8 +203,9 @@ jobs:
             echo "if (code.modified || code.created || code.deleted || code.edited) message('YES') " >> danger.js
             danger ci --text-only --dangerfile danger.js | tee danger.out
             CHECK=$(grep YES danger.out)
-            [[ -z $CHECK ]] && CHANGED=false
+            if [[ -z $CHECK ]]; then CHANGED=false; fi
           fi
+          cat danger.out
           echo "changed=$CHANGED" >> $GITHUB_OUTPUT
 
 #      - name: "Debug"
