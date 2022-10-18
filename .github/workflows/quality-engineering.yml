@@ -193,6 +193,8 @@ jobs:
 
       - name: "Get changed/added files"
         id: code
+        env:
+          GITHUB_TOKEN: ${{ secrets.githubToken }}
         run: |
           echo "changed=true" > $GITHUB_OUTPUT
           if [[ ${{ github.event.pull_request.head.repo.fork }} == 'false' ]]; then
