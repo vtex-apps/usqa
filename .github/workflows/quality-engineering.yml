@@ -204,13 +204,11 @@ jobs:
             danger-ci -ftd danger.js | tee danger.out
           fi
           if [[ -f danger.out ]]; then 
-            CHECK=$(grep 'YES' danger.out)
+            CHECK=$(grep 'YES' danger.out || echo)
             [[ -z $CHECK ]] && CHANGED=false
           fi
           echo "changed=$CHANGED" >> $GITHUB_OUTPUT
 
-#            CHECK=$(grep YES danger.out)
-#            if [[ -z $CHECK ]]; then CHANGED=false; fi
 
 #      - name: "Debug"
 #        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debugEnabled }}
