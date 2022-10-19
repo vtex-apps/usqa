@@ -199,7 +199,7 @@ jobs:
       - name: "Run Denger.js"
         env:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
-          REQUIRE_CHANGELOG_VERSION: ${{ input.dangerRequireChangelog }}
+          REQUIRE_CHANGELOG_VERSION: ${{ inputs.dangerRequireChangelog }}
         run: |          
           cat << EOF_JS > danger.js
             const { fail, warn, message, danger } = require('danger')
