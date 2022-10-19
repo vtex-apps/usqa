@@ -220,7 +220,7 @@ jobs:
             const lockChanged = lock.modified || lock.created || lock.deleted || lock.edited
             const toolChanged = tool.modified || tool.created || tool.deleted || tool.edited
             if (github) {
-              message(':heart: Thanks, ' + user + ', for your pull request')
+              message(':heart: Thanks, ' + user + '!')
               message(':tada: PR additions =  ' + additions + ', PR deletions = ' + deletions)
               if (code.modified || code.created || code.deleted || code.edited) console.log('SUBSTANTIAL_CHANGES')
               if (!isCollaborator && toolChanged) fail("Outside collaborators shouldn't change tooling \n[actions, package.json, etc]") 
@@ -234,7 +234,6 @@ jobs:
           if [[ -f dangerfile.js ]]; then cat dangerfile.js >> danger.js; fi
           ERR=0; yarn danger ci -fd danger.js &> danger.out || ERR=1
           cat danger.out
-          echo "Danger failed? --> $ERR"
           echo "dangerFailed=$ERR" >> $GITHUB_ENV
 
       - name: "Check for substantial changes"
@@ -247,74 +246,84 @@ jobs:
             [[ -z $CHECK ]] && SUBSTANTIAL_CHANGES=false
           fi
           echo "Do we have substantial changes? --> $SUBSTANTIAL_CHANGES"
+          echo "What is the Danger step result? --> $ERR"
           echo "substantialChanges=$SUBSTANTIAL_CHANGES" >> $GITHUB_OUTPUT       
           exit ${{ env.dangerFailed }}
 
-#  # -----------------------------------------------------------------------------------------
-#  # Job to run Lint (Node.js)
-#  # -----------------------------------------------------------------------------------------
-#  nodeLint:
-#    name: 'Lint Node.js'
-#    if: ${{ inputs.nodeLint || inputs.nodeSonar || inputs.nodeTest}}
-#    runs-on: ubuntu-latest
-#    needs: [safeCheck]
-#    timeout-minutes: 5
-#    steps:
-#      - name: 'Trusted checkout'
-#        uses: actions/checkout@v3
-#        if: ( github.event.pull_request.head.repo.fork == false )
-#      - name: 'Untrusted checkout'
-#        uses: actions/checkout@v3
-#        if: ( github.event.pull_request.head.repo.fork == true )
-#        with:
-#          ref: ${{ github.event.pull_request.head.ref }}
-#          repository: ${{ github.event.pull_request.head.repo.full_name }}
-#      - name: 'Lint JSON'
-#        run: |
-#          FAILED=0
-#          find -name "*.json" -not -path "*/node_modules/*" -not -path "./dotnet*" | while read json; do
-#            ERROR=0
-#            jq . -cM "$json" 1>/dev/null 2>error || ERROR=1
-#            if [[ $ERROR -eq 0 ]]; then
-#              echo "OK: $json"
-#            else
-#              FAILED=1
-#              echo "ERROR: $json"
-#              MSG=$(sed 's/\(.*\) at line \(.*\), column \(.*\)$/\1;\2;\3/' error)
-#              F="$json"
-#              E="$(echo $MSG | cut -d ';' -f1)"
-#              L=$(echo $MSG | cut -d ';' -f2)
-#              C=$(echo $MSG | cut -d ';' -f3)
-#              echo "::error file=$F,line=$L,col=$C::$E"
-#            fi
-#          done
-#          if [[ $FAILED -eq 1 ]]; then
-#            exit 1;
-#          fi
-#      - name: 'Set up Node.js'
-#        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'push' )
-#        uses: actions/setup-node@v3
-#        with:
-#          node-version: 16
-#          cache: yarn
-#        continue-on-error: true
-#      - name: 'Install packages'
-#        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'push' )
-#        run: |
-#          echo "==> Installing root packages..."
-#          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
-#          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
-#            # checkout-ui-custom has a bug on package.json installation, so let's skip it
-#            if [[ $DIR != 'checkout-ui-custom' ]]; then
-#              echo "==> Installing $DIR packages..."
-#              cd "$DIR"
-#              yarn install --frozen-lockfile
-#              cd -
-#            fi
-#          done
-#      - name: 'Run lint'
-#        if: ( needs.safeCheck.outputs.substantialChanges == 'true' ) || ( github.event_name == 'push' )
-#        run: yarn lint
+  # -----------------------------------------------------------------------------------------
+  # Job to run Lint (Node.js)
+  # -----------------------------------------------------------------------------------------
+  nodeLint:
+    name: 'Lint Node.js'
+    if: ${{ inputs.nodeLint || inputs.nodeSonar || inputs.nodeTest }}
+    runs-on: ubuntu-latest
+    needs: [safeCheck, danger]
+    timeout-minutes: 5
+    steps:
+      - name: "Trusted checkout"
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
+        if: github.event.pull_request.head.repo.fork == false
+
+      - name: "Untrusted checkout"
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
+        if: github.event.pull_request.head.repo.fork == true
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+
+      - name: 'Lint JSON'
+        run: |
+          echo "::group::Lint Json"
+          FAILED=0
+          find -name "*.json" -not -path "*/node_modules/*" -not -path "./dotnet*" | while read json; do
+            ERR=0
+            jq . -cM "$json" 1>/dev/null 2>error || ERR=1
+            if [[ $ERR -eq 0 ]]; then
+              echo "OK: $json"
+            else
+              FAILED=1
+              echo "ERROR: $json"
+              MSG=$(sed 's/\(.*\) at line \(.*\), column \(.*\)$/\1;\2;\3/' error)
+              F="$json"
+              E="$(echo $MSG | cut -d ';' -f1)"
+              L="$(echo $MSG | cut -d ';' -f2)"
+              C="$(echo $MSG | cut -d ';' -f3)"
+              echo "::error file=$F,line=$L,col=$C::$E"
+            fi
+          done
+          echo "::endgroup::"
+          if [[ $FAILED -eq 1 ]]; then
+            exit 1;
+          fi
+
+      - name: 'Set up Node.js'
+        if: needs.danger.outputs.substantialChanges == 'true' || github.event_name == 'push'
+        uses: actions/setup-node@v3
+        with:
+          cache: yarn
+        continue-on-error: true
+
+      - name: 'Install packages'
+        if: needs.safeCheck.outputs.substantialChanges == 'true' || github.event_name == 'push'
+        run: |
+          echo "==> Installing root packages..."
+          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
+            # checkout-ui-custom has a bug on package.json installation, so let's skip it
+            if [[ $DIR != 'checkout-ui-custom' ]]; then
+              echo "==> Installing $DIR packages..."
+              cd "$DIR"
+              yarn install --frozen-lockfile
+              cd -
+            fi
+          done
+
+      - name: 'Run lint'
+        if: needs.safeCheck.outputs.substantialChanges == 'true' || github.event_name == 'push'
+        run: |
+          echo "::group::Lint Node.js"
+          yarn lint
+          echo "::endgroup::"
 #
 #  # -----------------------------------------------------------------------------------------
 #  # Job to run tests (Node.js on node folder)
