@@ -134,11 +134,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 1
     outputs:
-      substantialChanges: ${{ steps.code.outputs.changed }}
-      pkgChanged: ${{ steps.code.outputs.pkgChanged }}
-      lckChanged: ${{ steps.code.outputs.lckChanged }}
-      chlChanged: ${{ steps.code.outputs.chlChanged }}
-      prHasBody: ${{ steps.code.outputs.prHasBody }}
+      substantialChanges: ${{ steps.code.outputs.changed || false }}
+      pkgChanged: ${{ steps.code.outputs.pkgChanged || false }}
+      lckChanged: ${{ steps.code.outputs.lckChanged || false }}
+      chlChanged: ${{ steps.code.outputs.chlChanged || false }}
+      prHasBody: ${{ steps.code.outputs.prHasBody || false }}
     steps:
       - name: "PR message to people outside VTEX"
         if: |
