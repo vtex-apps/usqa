@@ -226,8 +226,8 @@ jobs:
               if (pr.body?.length < 10) fail('Provide or increase the description for this PR [at least 10 chars]')
               if (modifiedFiles?.length > 15) warn('Looks like this PR is large. Please, try smaller one next time')
               if (!github.pr?.assignees?.length && !github.pr?.assignee) warn('No assignee has been set')
-              if (modifiedFiles.some(file => toolingFiles.some(toolingFile => file.includes(toolingFile))) && !isCollaborator() {
-                fail('This PR modifies important tooling of the project, outside collaborators can't do that')
+              if (modifiedFiles.some(file => toolingFiles.some(toolingFile => file.includes(toolingFile))) && !isCollaborator()) {
+                fail("This PR modifies tooling (actions, package.json, etc), outside collaborators shouldn't do it")
               }
               if (requiresChangelog) keepachangelog({ changeVersion: $REQUIRE_CHANGELOG_VERSION })
             }
