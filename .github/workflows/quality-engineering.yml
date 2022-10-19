@@ -143,7 +143,7 @@ jobs:
           echo
           echo "💡 Thank you for submitting your contribution to this repository!"
           echo "To avoid bugs and security issues, your code must pass on our quality engineering workflow."
-          echo "To start the tests, please, ask one VTEXer to read your code and add `safe to test` label."
+          echo "To start the pipeline, please, ask one VTEXer to read your code and add `safe to test` label."
           echo
           echo "Remember: If you do any changes after the approval, someone from VTEX needs to redo the label thing."
           exit 1
@@ -171,7 +171,7 @@ jobs:
     timeout-minutes: 1
     needs: [safeCheck]
     outputs:
-      substantialChanges: ${{ steps.code.outputs.changed }}
+      substantialChanges: ${{ steps.changes.outputs.substantialChanges }}
     steps:
       - name: "Trusted checkout"
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
@@ -191,106 +191,44 @@ jobs:
         continue-on-error: true
 
       - name: "Install Danger.js"
-        run: yarn global add danger@11
+        run: |
+          yarn global add danger@11 danger-plugin-keepachangelog@1
+          yarn add --dev danger@11 danger-plugin-keepachangelog@1
+          git checkout package.json yarn.lock
 
-      - name: "Get changed/added files"
-        id: code
+      - name: "Run Denger.js"
         env:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
+        run: |          
+          cat << EOF_JS > danger.js
+          const { fail, warn, message, danger } = require('danger')
+          const { keepachangelog } = require('danger-plugin-keepachangelog')          
+          const code = danger.git.fileMatch('dotnet/**', 'react/**', 'node/**', '**/*.js', '**/*.ts',
+                                            'package.json', 'messages/en.json', 'messages/en-us.json')
+          const pkgs = danger.git.fileMatch('package.json', 'react/package.json', 'node/package.json')
+          const lock = danger.git.fileMatch('yarn.lock', 'react/yarn.lock', 'node/yarn.lock')
+          if (code.modified || code.created || code.deleted || code.edited) console.log('SUBSTANTIAL_CHANGES')          
+          EOF_JS
+          if [[ -f dangerfile.js ]]; then cat dangerfile.js >> danger.js; fi
+          ERR=0
+          danger-ci -fd danger.js &> danger.out || ERR=1
+          echo "Danger failed?"
+          echo $ERR
+          echo "dangerFailed=$ERR" >> $GITHUB_ENV
+
+      - name: "Check for substantial changes"
+        if: always()
+        id: changes
         run: |
-          DANGER_JS="danger.js"
-          DANGER_OUT="danger.out"
-          PR_MIN_SIZE=10
-          CHANGED=true
-          PKG=false
-          LCK=false
-          CHL=false
-
-          echo "const code = danger.git.fileMatch('dotnet/**', 'react/**', 'node/**', '**/*.js',             "  > $DANGER_JS
-          echo "             '**/*.ts', 'package.json', 'messages/en.json', 'messages/en-us.json')           " >> $DANGER_JS
-          echo "const pkgs = danger.git.fileMatch('package.json', 'react/package.json', 'node/package.json') " >> $DANGER_JS
-          echo "const lock = danger.git.fileMatch('yarn.lock', 'react/yarn.lock', 'node/yarn.lock')          " >> $DANGER_JS
-          echo "const chlg = danger.git.fileMatch('CHANGELOG.md')                                            " >> $DANGER_JS
-          echo "if (code.modified || code.created || code.deleted || code.edited) message('BIG_CHANGES')     " >> $DANGER_JS
-          echo "if (pkgs.modified || pkgs.created || pkgs.deleted || pkgs.edited) message('PKG_CHANGES')     " >> $DANGER_JS
-          echo "if (lock.modified || lock.created || lock.deleted || lock.edited) message('LCK_CHANGES')     " >> $DANGER_JS
-          echo "if (chlg.modified || chlg.created || chlg.deleted || chlg.edited) message('CHL_CHANGES')     " >> $DANGER_JS
-          echo "message(`PR_BODY_LENGTH=${danger.pr?.body?.length < $PR_MIN_SIZE}`)                          " >> $DANGER_JS
-          danger-ci -ftd $DANGER_JS | tee $DANGER_OUT
-
+          SUBSTANTIAL_CHANGES=true
           if [[ ${{ github.event.pull_request.head.repo.fork }} == false ]]; then
-            CHECK=$(grep BIG_CHANGES $DANGER_OUT || echo)
-            [[ -z $CHECK ]] && CHANGED=false
+            CHECK=$(grep SUBSTANTIAL_CHANGES danger.out || echo)
+            [[ -z $CHECK ]] && SUBSTANTIAL_CHANGES=false
           fi
-
-          CHECK=$(grep PKG_CHANGES $DANGER_OUT || echo)
-          [[ -n $CHECK ]] && PKG=true
-
-          CHECK=$(grep LCK_CHANGES $DANGER_OUT || echo)
-          [[ -n $CHECK ]] && LCK=true
-
-          CHECK=$(grep CHL_CHANGES $DANGER_OUT || echo)
-          [[ -n $CHECK ]] && CHL=true
-
-          PR_BODY=$(grep PR_BODY_LENGTH | cut -d= -f2 || echo false)
-
-          echo "changed=$CHANGED"   >> $GITHUB_OUTPUT
-          echo "pkgChanged=$PKG"    >> $GITHUB_OUTPUT
-          echo "lckChanged=$LCK"    >> $GITHUB_OUTPUT
-          echo "clgChanged=$CLG"    >> $GITHUB_OUTPUT
-          echo "prHasBody=$PR_BODY" >> $GITHUB_OUTPUT
-
-      - name: "Write Danger PR"
-        if: |
-          steps.code.outputs.prHasBody == false ||
-          steps.code.outputs.chlChanged == false ||
-          steps.code.outputs.pkgChanged != steps.code.outputs.lckChanged
-        uses: marocchino/sticky-pull-request-comment@97bddef64db61b9d80edc69593cc4e4c415c3362 # v2.2.1
-        with:
-          header: danger
-          recreate: true
-          message: "### Danger failed"
-
-      - name: "Delete Danger PR"
-        if: |
-          steps.code.outputs.prHasBody == true &&
-          steps.code.outputs.chlChanged == true &&
-          steps.code.outputs.pkgChanged == steps.code.outputs.lckChanged
-        uses: marocchino/sticky-pull-request-comment@97bddef64db61b9d80edc69593cc4e4c415c3362 # v2.2.1
-        with:
-          header: danger
-          delete: true
-
-      - name: "PR without body"
-        if: steps.code.outputs.prHasBody == false
-        uses: marocchino/sticky-pull-request-comment@97bddef64db61b9d80edc69593cc4e4c415c3362 # v2.2.1
-        with:
-          header: danger
-          append: true
-          message: "    [✗] Your should add a message on your pull request"
-
-      - name: "PR without changelog"
-        if: steps.code.outputs.chlChanged == false
-        uses: marocchino/sticky-pull-request-comment@97bddef64db61b9d80edc69593cc4e4c415c3362 # v2.2.1
-        with:
-          header: danger
-          append: true
-          message: "    [✗] Your should update the CHANGELOG.md"
-
-      - name: "PR with package.json without yarn.log updated"
-        if: steps.code.outputs.pkgChanged != needs.safeCheck.outputs.lckChanged
-        uses: marocchino/sticky-pull-request-comment@97bddef64db61b9d80edc69593cc4e4c415c3362 # v2.2.1
-        with:
-          header: danger
-          append: true
-          message: "    [✗] You changed package.json, but not update yarn.lock"
-
-      - name: "Fail Danger if something is wrong"
-        if: |
-          steps.code.outputs.prHasBody == false ||
-          steps.code.outputs.chlChanged == false ||
-          steps.code.outputs.pkgChanged != steps.code.outputs.lckChanged
-        run: exit 1
+          echo "Do we have substantial changes?"
+          echo $SUBSTANTIAL_CHANGES
+          echo "substantialChanges=$SUBSTANTIAL_CHANGES" >> $GITHUB_OUTPUT       
+          exit ${{ env.dangerFailed }}
 
 #  # -----------------------------------------------------------------------------------------
 #  # Job to run Lint (Node.js)
