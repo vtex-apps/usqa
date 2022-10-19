@@ -133,40 +133,20 @@ jobs:
     name: "Security check"
     runs-on: ubuntu-latest
     timeout-minutes: 1
-    outputs:
-      substantialChanges: ${{ steps.code.outputs.changed || false }}
-      pkgChanged: ${{ steps.code.outputs.pkgChanged || false }}
-      lckChanged: ${{ steps.code.outputs.lckChanged || false }}
-      chlChanged: ${{ steps.code.outputs.chlChanged || false }}
-      prHasBody: ${{ steps.code.outputs.prHasBody || false }}
     steps:
       - name: "PR message to people outside VTEX"
         if: |
           github.event.pull_request.head.repo.fork == true && 
           !contains(github.event.pull_request.labels.*.name, 'safe to test')
-        uses: marocchino/sticky-pull-request-comment@97bddef64db61b9d80edc69593cc4e4c415c3362 # v2.2.1
-        with:
-          header: securityCheck
-          recreate: true
-          message: |
-            ### Security check failed
-            
-            💡 Thank you for submitting your contribution to this repository! To avoid bugs and security issues, your code must pass on our quality engineering workflow. To start the tests, please, ask one VTEXer to read your code and add `safe to test` label. 
-            
-            Remember: If you do any changes after the approval, someone from VTEX needs to redo the label thing.
-
-      - name: "Fail if outside without 'safe to test' label"
-        if: |
-          github.event.pull_request.head.repo.fork == true && 
-          !contains(github.event.pull_request.labels.*.name, 'safe to test')
-        run: exit 1
-
-      - name: "Clear PR safe check message"
-        if: contains(github.event.pull_request.labels.*.name, 'safe to test')
-        uses: marocchino/sticky-pull-request-comment@97bddef64db61b9d80edc69593cc4e4c415c3362 # v2.2.1
-        with:
-          header: securityCheck
-          delete: true
+        run: |
+          echo "Security check failed"
+          echo
+          echo "💡 Thank you for submitting your contribution to this repository!"
+          echo "To avoid bugs and security issues, your code must pass on our quality engineering workflow."
+          echo "To start the tests, please, ask one VTEXer to read your code and add `safe to test` label."
+          echo
+          echo "Remember: If you do any changes after the approval, someone from VTEX needs to redo the label thing."
+          exit 1
 
       - name: "Remove the label 'safe to test' to avoid run again on changed code"
         if: contains(github.event.pull_request.labels.*.name, 'safe to test')
@@ -174,6 +154,25 @@ jobs:
           curl -sfX DELETE -H 'Accept: application/vnd.github.v3+json' -H 'Authorization: token ${{ secrets.githubToken }}' \
           'https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.number }}/labels/safe%20to%20test' &> /dev/null
 
+#      - name: "Debug"
+#        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debugEnabled }}
+#        timeout-minutes: 5
+#        uses: mxschmitt/action-tmate@28f608baaa037465aa887c21a7924e9e6b66a9e0 # v3.13
+#        with:
+#          limit-access-to-actor: true
+
+
+  # -----------------------------------------------------------------------------------------
+  # Danger job
+  # -----------------------------------------------------------------------------------------
+  danger:
+    name: "Danger"
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    needs: [safeCheck]
+    outputs:
+      substantialChanges: ${{ steps.code.outputs.changed }}
+    steps:
       - name: "Trusted checkout"
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
         if: github.event.pull_request.head.repo.fork == false
@@ -206,7 +205,7 @@ jobs:
           PKG=false
           LCK=false
           CHL=false
-          
+
           echo "const code = danger.git.fileMatch('dotnet/**', 'react/**', 'node/**', '**/*.js',             "  > $DANGER_JS
           echo "             '**/*.ts', 'package.json', 'messages/en.json', 'messages/en-us.json')           " >> $DANGER_JS
           echo "const pkgs = danger.git.fileMatch('package.json', 'react/package.json', 'node/package.json') " >> $DANGER_JS
@@ -218,12 +217,12 @@ jobs:
           echo "if (chlg.modified || chlg.created || chlg.deleted || chlg.edited) message('CHL_CHANGES')     " >> $DANGER_JS
           echo "message(`PR_BODY_LENGTH=${danger.pr?.body?.length < $PR_MIN_SIZE}`)                          " >> $DANGER_JS
           danger-ci -ftd $DANGER_JS | tee $DANGER_OUT
-          
+
           if [[ ${{ github.event.pull_request.head.repo.fork }} == false ]]; then
             CHECK=$(grep BIG_CHANGES $DANGER_OUT || echo)
             [[ -z $CHECK ]] && CHANGED=false
           fi
-          
+
           CHECK=$(grep PKG_CHANGES $DANGER_OUT || echo)
           [[ -n $CHECK ]] && PKG=true
 
@@ -234,36 +233,18 @@ jobs:
           [[ -n $CHECK ]] && CHL=true
 
           PR_BODY=$(grep PR_BODY_LENGTH | cut -d= -f2 || echo false)
-          
+
           echo "changed=$CHANGED"   >> $GITHUB_OUTPUT
           echo "pkgChanged=$PKG"    >> $GITHUB_OUTPUT
           echo "lckChanged=$LCK"    >> $GITHUB_OUTPUT
           echo "clgChanged=$CLG"    >> $GITHUB_OUTPUT
           echo "prHasBody=$PR_BODY" >> $GITHUB_OUTPUT
 
-
-#      - name: "Debug"
-#        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debugEnabled }}
-#        timeout-minutes: 5
-#        uses: mxschmitt/action-tmate@28f608baaa037465aa887c21a7924e9e6b66a9e0 # v3.13
-#        with:
-#          limit-access-to-actor: true
-
-
-  # -----------------------------------------------------------------------------------------
-  # Danger job
-  # -----------------------------------------------------------------------------------------
-  danger:
-    name: "Danger"
-    runs-on: ubuntu-latest
-    timeout-minutes: 1
-    needs: [safeCheck]
-    steps:
       - name: "Write Danger PR"
         if: |
-          needs.safeCheck.outputs.prHasBody == false ||
-          needs.safeCheck.outputs.chlChanged == false ||
-          needs.safeCheck.outputs.pkgChanged != needs.safeCheck.outputs.lckChanged
+          steps.code.outputs.prHasBody == false ||
+          steps.code.outputs.chlChanged == false ||
+          steps.code.outputs.pkgChanged != steps.code.outputs.lckChanged
         uses: marocchino/sticky-pull-request-comment@97bddef64db61b9d80edc69593cc4e4c415c3362 # v2.2.1
         with:
           header: danger
@@ -272,16 +253,16 @@ jobs:
 
       - name: "Delete Danger PR"
         if: |
-          needs.safeCheck.outputs.prHasBody == true &&
-          needs.safeCheck.outputs.chlChanged == true &&
-          needs.safeCheck.outputs.pkgChanged == needs.safeCheck.outputs.lckChanged
+          steps.code.outputs.prHasBody == true &&
+          steps.code.outputs.chlChanged == true &&
+          steps.code.outputs.pkgChanged == steps.code.outputs.lckChanged
         uses: marocchino/sticky-pull-request-comment@97bddef64db61b9d80edc69593cc4e4c415c3362 # v2.2.1
         with:
           header: danger
           delete: true
 
       - name: "PR without body"
-        if: needs.safeCheck.outputs.prHasBody == false
+        if: steps.code.outputs.prHasBody == false
         uses: marocchino/sticky-pull-request-comment@97bddef64db61b9d80edc69593cc4e4c415c3362 # v2.2.1
         with:
           header: danger
@@ -289,7 +270,7 @@ jobs:
           message: "    [✗] Your should add a message on your pull request"
 
       - name: "PR without changelog"
-        if: needs.safeCheck.outputs.chlChanged == false
+        if: steps.code.outputs.chlChanged == false
         uses: marocchino/sticky-pull-request-comment@97bddef64db61b9d80edc69593cc4e4c415c3362 # v2.2.1
         with:
           header: danger
@@ -297,7 +278,7 @@ jobs:
           message: "    [✗] Your should update the CHANGELOG.md"
 
       - name: "PR with package.json without yarn.log updated"
-        if: needs.safeCheck.outputs.pkgChanged != needs.safeCheck.outputs.lckChanged
+        if: steps.code.outputs.pkgChanged != needs.safeCheck.outputs.lckChanged
         uses: marocchino/sticky-pull-request-comment@97bddef64db61b9d80edc69593cc4e4c415c3362 # v2.2.1
         with:
           header: danger
@@ -306,9 +287,9 @@ jobs:
 
       - name: "Fail Danger if something is wrong"
         if: |
-          needs.safeCheck.outputs.prHasBody == false ||
-          needs.safeCheck.outputs.chlChanged == false ||
-          needs.safeCheck.outputs.pkgChanged != needs.safeCheck.outputs.lckChanged
+          steps.code.outputs.prHasBody == false ||
+          steps.code.outputs.chlChanged == false ||
+          steps.code.outputs.pkgChanged != steps.code.outputs.lckChanged
         run: exit 1
 
 #  # -----------------------------------------------------------------------------------------
