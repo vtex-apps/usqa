@@ -220,8 +220,8 @@ jobs:
             const lockChanged = lock.modified || lock.created || lock.deleted || lock.edited
             const toolChanged = tool.modified || tool.created || tool.deleted || tool.edited
             if (github) {
-              message(`Thanks, ${user}, for your pull request`)
-              message(`:tada: PR additions =  ${additions}, PR deletions = ${deletions}`)
+              message(':heart: Thanks, ' + user + ', for your pull request')
+              message(':tada: PR additions =  ' + additions + ', PR deletions = ' + deletions)
               if (code.modified || code.created || code.deleted || code.edited) console.log('SUBSTANTIAL_CHANGES')
               if (!isCollaborator && toolChanged) fail("Outside collaborators shouldn't change tooling \n[actions, package.json, etc]") 
               if (pkgsChanged != lockChanged) warn('You changed package.json, but not yarn.lock (vice-versa)')
