@@ -208,6 +208,7 @@ jobs:
             const github = danger.github
             const user = pr?.user?.login
             const modifiedFiles = danger.git?.created_files?.concat(danger.git?.deleted_files).concat(danger.git?.modified_files)
+            const isCollaborator = pr.author_association === "COLLABORATOR" || pr.author_association === "MEMBER" || pr.author_association === "OWNER"
             const changelogAllowList = ['dependabot[bot]']
             const requiresChangelog = !changelogAllowList.includes(user)
             const code = danger.git.fileMatch('dotnet/**', 'react/**', 'node/**', '**/*.js', '**/*.ts',
@@ -219,20 +220,25 @@ jobs:
             const lockChanged = lock.modified || lock.created || lock.deleted || lock.edited
             const toolChanged = tool.modified || tool.created || tool.deleted || tool.edited
             if (github) {
-              const isCollaborator = pr.author_association === "COLLABORATOR" || relation === "MEMBER" || relation === "OWNER"
               message(`Thanks, ${user}, for your pull request`)
               message(`:tada: PR additions =  ${additions}, PR deletions = ${deletions}`)
               if (code.modified || code.created || code.deleted || code.edited) console.log('SUBSTANTIAL_CHANGES')
-              if (!isCollaborator && toolChanged) fail("Outside collaborators shouldn't change tooling\n(actions, package.json, etc") 
-              if (pkgsChanged != lockChanged) fail('You changed package.json, but not yarn.lock [vice-versa]')
-              if (pr.body?.length < 10) fail('Provide or increase the description for this PR [at least 10 chars]')
-              if (modifiedFiles?.length > 15 || additions + deletions > 420) warn('Looks like this PR is large. Please, try smaller one next time')
-              if (!github.pr?.assignees?.length && !github.pr?.assignee) warn('No assignee has been set')
+              if (!isCollaborator && toolChanged) fail("Outside collaborators shouldn't change tooling
+                                                       [actions, package.json, etc]") 
+              if (pkgsChanged != lockChanged) warn('You changed package.json, but not yarn.lock \n(vice-versa)
+                                                    [Are you sure is it right?]')
+              if (pr.body?.length < 10) fail('Provide or increase the description for this PR
+                                              [at least 10 chars]')
+              if (modifiedFiles?.length > 15 || additions + deletions > 420) warn('Looks like this PR is large.
+                                                                                   [Please, try smaller one next time]')
+              if (!github.pr?.assignees?.length && !github.pr?.assignee) warn('No assignee has been set
+                                                                               [if you assign someone, it'll be faster]')
               if (requiresChangelog) keepachangelog({ changeVersion: $REQUIRE_CHANGELOG_VERSION })
             }
           EOF_JS
           if [[ -f dangerfile.js ]]; then cat dangerfile.js >> danger.js; fi
           ERR=0; yarn danger ci -fd danger.js &> danger.out || ERR=1
+          cat danger.out
           echo "Danger failed? --> $ERR"
           echo "dangerFailed=$ERR" >> $GITHUB_ENV
 
