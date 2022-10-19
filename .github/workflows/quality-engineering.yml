@@ -1,4 +1,5 @@
 name: "[QE] Quality Engineering"
+
 on:
 #  # Just to make easier debug typos
 #  workflow_dispatch:
@@ -8,6 +9,7 @@ on:
 #        type: boolean
 #        required: false
 #        default: false
+
   # Allow this to be called by others
   workflow_call:
     inputs:
@@ -130,9 +132,13 @@ jobs:
   safeCheck:
     name: "Security check"
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 1
     outputs:
-      changes: ${{ steps.code.outputs.changed }}
+      substantialChanges: ${{ steps.code.outputs.changed }}
+      pkgChanged: ${{ steps.code.outputs.pkgChanged }}
+      lckChanged: ${{ steps.code.outputs.lckChanged }}
+      chlChanged: ${{ steps.code.outputs.chlChanged }}
+      prHasBody: ${{ steps.code.outputs.prHasBody }}
     steps:
       - name: "PR message to people outside VTEX"
         if: |
@@ -193,18 +199,47 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
         run: |
+          DANGER_JS="danger.js"
+          DANGER_OUT="danger.out"
+          PR_MIN_SIZE=10
           CHANGED=true
+          PKG=false
+          LCK=false
+          CHL=false
+          
+          echo "const code = danger.git.fileMatch('dotnet/**', 'react/**', 'node/**', '**/*.js',             "  > $DANGER_JS
+          echo "             '**/*.ts', 'package.json', 'messages/en.json', 'messages/en-us.json')           " >> $DANGER_JS
+          echo "const pkgs = danger.git.fileMatch('package.json', 'react/package.json', 'node/package.json') " >> $DANGER_JS
+          echo "const lock = danger.git.fileMatch('yarn.lock', 'react/yarn.lock', 'node/yarn.lock')          " >> $DANGER_JS
+          echo "const chlg = danger.git.fileMatch('CHANGELOG.md')                                            " >> $DANGER_JS
+          echo "if (code.modified || code.created || code.deleted || code.edited) message('BIG_CHANGES')     " >> $DANGER_JS
+          echo "if (pkgs.modified || pkgs.created || pkgs.deleted || pkgs.edited) message('PKG_CHANGES')     " >> $DANGER_JS
+          echo "if (lock.modified || lock.created || lock.deleted || lock.edited) message('LCK_CHANGES')     " >> $DANGER_JS
+          echo "if (chlg.modified || chlg.created || chlg.deleted || chlg.edited) message('CHL_CHANGES')     " >> $DANGER_JS
+          echo "message(`PR_BODY_LENGTH=${danger.pr?.body?.length < $PR_MIN_SIZE}`)                          " >> $DANGER_JS
+          danger-ci -ftd $DANGER_JS | tee $DANGER_OUT
+          
           if [[ ${{ github.event.pull_request.head.repo.fork }} == false ]]; then
-            echo "const code = danger.git.fileMatch('dotnet/**', 'react/**', 'node/**', '**/*.js',   "  > danger.js
-            echo "             '**/*.ts', 'package.json', 'messages/en.json', 'messages/en-us.json') " >> danger.js
-            echo "if (code.modified || code.created || code.deleted || code.edited) message('YES')   " >> danger.js
-            danger-ci -ftd danger.js | tee danger.out
-          fi
-          if [[ -f danger.out ]]; then 
-            CHECK=$(grep 'YES' danger.out || echo)
+            CHECK=$(grep BIG_CHANGES $DANGER_OUT || echo)
             [[ -z $CHECK ]] && CHANGED=false
           fi
-          echo "changed=$CHANGED" >> $GITHUB_OUTPUT
+          
+          CHECK=$(grep PKG_CHANGES $DANGER_OUT || echo)
+          [[ -n $CHECK ]] && PKG=true
+
+          CHECK=$(grep LCK_CHANGES $DANGER_OUT || echo)
+          [[ -n $CHECK ]] && LCK=true
+
+          CHECK=$(grep CHL_CHANGES $DANGER_OUT || echo)
+          [[ -n $CHECK ]] && CHL=true
+
+          PR_BODY=$(grep PR_BODY_LENGTH | cut -d= -f2 || echo false)
+          
+          echo "changed=$CHANGED"   >> $GITHUB_OUTPUT
+          echo "pkgChanged=$PKG"    >> $GITHUB_OUTPUT
+          echo "lckChanged=$LCK"    >> $GITHUB_OUTPUT
+          echo "clgChanged=$CLG"    >> $GITHUB_OUTPUT
+          echo "prHasBody=$PR_BODY" >> $GITHUB_OUTPUT
 
 
 #      - name: "Debug"
@@ -215,42 +250,67 @@ jobs:
 #          limit-access-to-actor: true
 
 
-#  # -----------------------------------------------------------------------------------------
-#  # Danger job [also detect substantial changes]
-#  # -----------------------------------------------------------------------------------------
-#  danger:
-#    name: "Danger"
-#    runs-on: ubuntu-latest
-#    timeout-minutes: 5
-#    needs: [safeCheck]
-#    steps:
-#      - name: "Trusted checkout"
-#        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
-#        if: github.event.pull_request.head.repo.fork == false
-#
-#      - name: "Untrusted checkout"
-#        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
-#        if: github.event.pull_request.head.repo.fork == true
-#        with:
-#          ref: ${{ github.event.pull_request.head.ref }}
-#          repository: ${{ github.event.pull_request.head.repo.full_name }}
-#
-#      - name: "Set up Node.js"
-#        uses: actions/setup-node@8c91899e586c5b171469028077307d293428b516 # v3.5.1
-#        with:
-#          cache: yarn
-#        continue-on-error: true
-#
-#      - name: "Install Danger.js"
-#        run: yarn global add danger@11
-#
-#      - name: "Get changed/added files"
-#        run: |
-#
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#          REQUIRE_CHANGELOG_VERSION: ${{ inputs.dangerRequireChangelog }}
-#
+  # -----------------------------------------------------------------------------------------
+  # Danger job
+  # -----------------------------------------------------------------------------------------
+  danger:
+    name: "Danger"
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    needs: [safeCheck]
+    steps:
+      - name: "Write Danger PR"
+        if: |
+          needs.safeCheck.outputs.prHasBody == false ||
+          needs.safeCheck.outputs.chlChanged == false ||
+          needs.safeCheck.outputs.pkgChanged != needs.safeCheck.outputs.lckChanged
+        uses: marocchino/sticky-pull-request-comment@97bddef64db61b9d80edc69593cc4e4c415c3362 # v2.2.1
+        with:
+          header: danger
+          recreate: true
+          message: "### Danger failed"
+
+      - name: "Delete Danger PR"
+        if: |
+          needs.safeCheck.outputs.prHasBody == true &&
+          needs.safeCheck.outputs.chlChanged == true &&
+          needs.safeCheck.outputs.pkgChanged == needs.safeCheck.outputs.lckChanged
+        uses: marocchino/sticky-pull-request-comment@97bddef64db61b9d80edc69593cc4e4c415c3362 # v2.2.1
+        with:
+          header: danger
+          delete: true
+
+      - name: "PR without body"
+        if: needs.safeCheck.outputs.prHasBody == false
+        uses: marocchino/sticky-pull-request-comment@97bddef64db61b9d80edc69593cc4e4c415c3362 # v2.2.1
+        with:
+          header: danger
+          append: true
+          message: "    [✗] Your should add a message on your pull request"
+
+      - name: "PR without changelog"
+        if: needs.safeCheck.outputs.chlChanged == false
+        uses: marocchino/sticky-pull-request-comment@97bddef64db61b9d80edc69593cc4e4c415c3362 # v2.2.1
+        with:
+          header: danger
+          append: true
+          message: "    [✗] Your should update the CHANGELOG.md"
+
+      - name: "PR with package.json without yarn.log updated"
+        if: needs.safeCheck.outputs.pkgChanged != needs.safeCheck.outputs.lckChanged
+        uses: marocchino/sticky-pull-request-comment@97bddef64db61b9d80edc69593cc4e4c415c3362 # v2.2.1
+        with:
+          header: danger
+          append: true
+          message: "    [✗] You changed package.json, but not update yarn.lock"
+
+      - name: "Fail Danger if something is wrong"
+        if: |
+          needs.safeCheck.outputs.prHasBody == false ||
+          needs.safeCheck.outputs.chlChanged == false ||
+          needs.safeCheck.outputs.pkgChanged != needs.safeCheck.outputs.lckChanged
+        run: exit 1
+
 #  # -----------------------------------------------------------------------------------------
 #  # Job to run Lint (Node.js)
 #  # -----------------------------------------------------------------------------------------
