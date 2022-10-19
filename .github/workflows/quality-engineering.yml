@@ -206,11 +206,8 @@ jobs:
             const pr = danger.github?.pr
             const { additions = 0, deletions = 0 } = pr
             const github = danger.github
-            const user = pr?.user?.login
             const modifiedFiles = danger.git?.created_files?.concat(danger.git?.deleted_files).concat(danger.git?.modified_files)
             const isCollaborator = pr.author_association === "COLLABORATOR" || pr.author_association === "MEMBER" || pr.author_association === "OWNER"
-            const changelogAllowList = ['dependabot[bot]']
-            const requiresChangelog = !changelogAllowList.includes(user)
             const code = danger.git.fileMatch('dotnet/**', 'react/**', 'node/**', '**/*.js', '**/*.ts',
                                               'package.json', 'messages/en.json', 'messages/en-us.json')
             const pkgs = danger.git.fileMatch('package.json', 'react/package.json', 'node/package.json')
@@ -220,21 +217,21 @@ jobs:
             const lockChanged = lock.modified || lock.created || lock.deleted || lock.edited
             const toolChanged = tool.modified || tool.created || tool.deleted || tool.edited
             if (github) {
-              message(':heart: Thanks, ' + user + '!')
-              message(':tada: PR additions =  ' + additions + ', PR deletions = ' + deletions)
               if (code.modified || code.created || code.deleted || code.edited) console.log('SUBSTANTIAL_CHANGES')
-              if (!isCollaborator && toolChanged) fail("Outside collaborators shouldn't change tooling \n[actions, package.json, etc]") 
+              if (!isCollaborator && toolChanged) fail("Outside collaborators shouldn't change tooling [actions, package.json, etc]") 
               if (pkgsChanged != lockChanged) warn('You changed package.json, but not yarn.lock (vice-versa)')
               if (pr.body?.length < 10) fail('Provide or increase the description for this PR [at least 10 chars]')
               if (modifiedFiles?.length > 15 || additions + deletions > 420) warn('Looks like this PR is too large')
               if (!github.pr?.assignees?.length && !github.pr?.assignee) warn('No assignee has been set')
-              if (requiresChangelog) keepachangelog({ changeVersion: $REQUIRE_CHANGELOG_VERSION })
+              keepachangelog({ changeVersion: $REQUIRE_CHANGELOG_VERSION })
+              message(':tada: PR additions =  ' + additions + ', PR deletions = ' + deletions)
+              message(':heart: Thanks!')
             }
           EOF_JS
           if [[ -f dangerfile.js ]]; then cat dangerfile.js >> danger.js; fi
           ERR=0; yarn danger ci -fd danger.js &> danger.out || ERR=1
           cat danger.out
-          echo "dangerFailed=$ERR" >> $GITHUB_ENV
+          echo "dangerResult=$ERR" >> $GITHUB_ENV
 
       - name: "Check for substantial changes"
         if: always()
@@ -246,9 +243,9 @@ jobs:
             [[ -z $CHECK ]] && SUBSTANTIAL_CHANGES=false
           fi
           echo "Do we have substantial changes? --> $SUBSTANTIAL_CHANGES"
-          echo "What is the Danger step result? --> $ERR"
+          echo "What is the Danger step result? --> ${{ env.dangerResult }}"
           echo "substantialChanges=$SUBSTANTIAL_CHANGES" >> $GITHUB_OUTPUT       
-          exit ${{ env.dangerFailed }}
+          exit ${{ env.dangerResult }}
 
   # -----------------------------------------------------------------------------------------
   # Job to run Lint (Node.js)
