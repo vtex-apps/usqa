@@ -168,7 +168,7 @@ jobs:
   danger:
     name: "Danger"
     runs-on: ubuntu-latest
-    timeout-minutes: 1
+    timeout-minutes: 2
     needs: [safeCheck]
     outputs:
       substantialChanges: ${{ steps.changes.outputs.substantialChanges }}
