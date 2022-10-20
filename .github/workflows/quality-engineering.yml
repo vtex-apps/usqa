@@ -649,6 +649,7 @@ jobs:
           dotnet-version: ${{ inputs.dotnetVersion }}
 
       - name: "Restore .Net packages"
+        run: |
           echo "::group::Restore packages"
           dotnet restore
           echo "::endgroup::"
