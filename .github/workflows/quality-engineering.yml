@@ -250,7 +250,7 @@ jobs:
           EOF_JS
           if [[ -f dangerfile.js ]]; then cat dangerfile.js >> danger.js; fi
           echo "::group::Run Danger.js"
-          yarn danger ci -d danger.js &> danger.out
+          yarn danger ci -fd danger.js &> danger.out
           cat danger.out 2> /dev/null || echo "danger.out not found"
           echo "::endgroup::"
 
@@ -258,7 +258,6 @@ jobs:
         id: changes
         run: |
           SUBSTANTIAL_CHANGES=true
-          FAILED=false
           if [[ -f danger.out ]]; then
             # As the fork will not be always present, we need a little hack here
             if [[ "${{ github.event.pull_request.head.repo.fork }}X" != "X" ]]; then
@@ -267,16 +266,9 @@ jobs:
                  [[ -z $CHECK ]] && SUBSTANTIAL_CHANGES=false
               fi
             fi
-            CHECK=$(grep FAILED danger.out || echo)
-            [[ -n $CHECK ]] && FAILED=true
           fi
           echo "Do we have substantial changes? --> $SUBSTANTIAL_CHANGES"
-          echo "Does Danger failed? --> $FAILED"
           echo "substantialChanges=$SUBSTANTIAL_CHANGES" >> $GITHUB_OUTPUT  
-          if [[ $FAILED == true ]]; then 
-            echo "::error title=Danger.js::Danger.js failed, please fix it and try again."
-            exit 99
-          fi
 
   # -----------------------------------------------------------------------------------------
   # Job to run Lint (Node.js)
