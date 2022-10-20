@@ -242,7 +242,7 @@ jobs:
           SUBSTANTIAL_CHANGES=true
           FAILED=false
           if [[ -f danger.out ]]; then
-            # As the fork will not be always tru, we need a little hack to check without errors
+            # As the fork will not be always present, we need a little hack here
             if [[ "${{ github.event.pull_request.head.repo.fork }}X" != "X" ]]; then
               if [[ "${{ github.event.pull_request.head.repo.fork }}X" == "falseX" ]]; then
                  CHECK=$(grep SUBSTANTIAL_CHANGES danger.out || echo)
