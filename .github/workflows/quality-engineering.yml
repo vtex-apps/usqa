@@ -242,9 +242,11 @@ jobs:
           SUBSTANTIAL_CHANGES=true
           FAILED=false
           if [[ -f danger.out ]]; then
-            if [[ ${{ github.event.pull_request.head.repo.fork }} == false ]]; then
-               CHECK=$(grep SUBSTANTIAL_CHANGES danger.out || echo)
-               [[ -z $CHECK ]] && SUBSTANTIAL_CHANGES=false
+            if [[ -n ${{ github.event.pull_request.head.repo.fork }} ]]; then
+              if [[ ${{ github.event.pull_request.head.repo.fork }} == false ]]; then
+                 CHECK=$(grep SUBSTANTIAL_CHANGES danger.out || echo)
+                 [[ -z $CHECK ]] && SUBSTANTIAL_CHANGES=false
+              fi
             fi
             CHECK=$(grep FAILED danger.out || echo)
             [[ -n $CHECK ]] && FAILED=true
