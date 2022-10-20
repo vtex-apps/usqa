@@ -199,7 +199,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
           REQUIRE_CHANGELOG_VERSION: ${{ inputs.dangerRequireChangelog }}
         run: |
-          echo "::group::Create Danger.js base file"
           cat << EOF_JS > danger.js
             const { fail, warn, message, danger } = require("danger")
             const { keepachangelog } = require("danger-plugin-keepachangelog")
@@ -250,9 +249,9 @@ jobs:
             }
           EOF_JS
           if [[ -f dangerfile.js ]]; then cat dangerfile.js >> danger.js; fi
-          echo "::endgroup::"
           echo "::group::Run Danger.js"
           yarn danger ci -d danger.js &> danger.out
+          cat danger.out 2> /dev/null || echo "danger.out not found"
           echo "::endgroup::"
 
       - name: "Check for substantial changes"
