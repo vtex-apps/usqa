@@ -3,6 +3,26 @@
 The Quality Engineering Team from US Regional Product creates those workflows to use between all projects related.
 ![image](https://user-images.githubusercontent.com/1340046/185407235-2644679a-0b45-4b0b-80cf-06a01d694891.png)
 
+## WARN
+
+**You should not use the `main` branch on production workflows. This branch is reserved to test new code and it can change from time to time without notice. Please, use a released tag instead.**
+
+### This is ok
+```yaml
+jobs:
+  quality-engineering:
+    name: QE
+    uses: vtex-apps/usqa/.github/workflows/quality-engineering.yml@v2
+```
+
+### This is not ok
+```yaml
+jobs:
+  quality-engineering:
+    name: QE
+    uses: vtex-apps/usqa/.github/workflows/quality-engineering.yml@main
+```
+
 ## Using it on PUSH events
 Suggested file name: `.github/workflows/qe-push.yml`
 
@@ -18,7 +38,7 @@ on:
 jobs:
   quality-engineering:
     name: QE
-    uses: vtex-apps/usqa/.github/workflows/quality-engineering.yml@main
+    uses: vtex-apps/usqa/.github/workflows/quality-engineering.yml@v2
     with:
       # As you pass your Sonar Project Key and Organization,
       # you don't need sonar-project.properties file on root
@@ -51,7 +71,7 @@ on:
 jobs:
   quality-engineering:
     name: QE
-    uses: vtex-apps/usqa/.github/workflows/quality-engineering.yml@main
+    uses: vtex-apps/usqa/.github/workflows/quality-engineering.yml@v2
     with:
       danger: true
       dangerRequireChangelog: false
@@ -87,7 +107,7 @@ on:
 jobs:
   quality-engineering:
     name: QE
-    uses: vtex-apps/usqa/.github/workflows/quality-engineering.yml@main
+    uses: vtex-apps/usqa/.github/workflows/quality-engineering.yml@v2
     with:
       danger: true
       dangerRequireChangelog: false
@@ -118,7 +138,7 @@ on:
 jobs:
   quality-engineering:
     name: QE
-    uses: vtex-apps/usqa/.github/workflows/quality-engineering.yml@main
+    uses: vtex-apps/usqa/.github/workflows/quality-engineering.yml@v2
     with:
       cypress: true
     secrets:
