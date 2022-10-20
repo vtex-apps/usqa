@@ -132,7 +132,7 @@ jobs:
   safeCheck:
     name: "Security check"
     runs-on: ubuntu-latest
-    timeout-minutes: 1
+    timeout-minutes: 5
     outputs:
       substantialChanges: ${{ steps.changes.outputs.substantialChanges }}
     steps:
