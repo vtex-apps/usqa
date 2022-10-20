@@ -130,7 +130,7 @@ jobs:
   # Security check: if pull_request_target, then should have 'safe to test' label
   # -----------------------------------------------------------------------------------------
   safeCheck:
-    name: "Compliance check"
+    name: "Security check"
     runs-on: ubuntu-latest
     timeout-minutes: 1
     outputs:
