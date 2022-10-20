@@ -243,7 +243,7 @@ jobs:
             [[ -z $CHECK ]] && SUBSTANTIAL_CHANGES=false
           fi
           CHECK=$(grep FAILED danger.out || echo)
-          [[ -z $CHECK ]] && FAILED=true
+          [[ -n $CHECK ]] && FAILED=true
           echo "Do we have substantial changes? --> $SUBSTANTIAL_CHANGES"
           echo "Does Danger failed? --> $FAILED"
           echo "substantialChanges=$SUBSTANTIAL_CHANGES" >> $GITHUB_OUTPUT       
@@ -302,7 +302,7 @@ jobs:
         continue-on-error: true
 
       - name: 'Install packages'
-        if: needs.safeCheck.outputs.substantialChanges == 'true' || github.event_name == 'push'
+        if: needs.danger.outputs.substantialChanges == 'true' || github.event_name == 'push'
         run: |
           echo "==> Installing root packages..."
           [[ -f 'package.json' ]] && yarn install --frozen-lockfile
@@ -317,7 +317,7 @@ jobs:
           done
 
       - name: 'Run lint'
-        if: needs.safeCheck.outputs.substantialChanges == 'true' || github.event_name == 'push'
+        if: needs.danger.outputs.substantialChanges == 'true' || github.event_name == 'push'
         run: |
           echo "::group::Lint Node.js"
           yarn lint
