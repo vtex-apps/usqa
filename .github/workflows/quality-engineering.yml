@@ -19,7 +19,7 @@ on:
       danger:
         description: "Run Danger?"
         type: boolean
-        default: false
+        default: true
         required: false
       dangerRequireChangelog:
         description: "Require changelog version for Danger?"
