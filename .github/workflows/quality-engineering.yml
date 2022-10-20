@@ -239,16 +239,16 @@ jobs:
       - name: "Check for substantial changes"
         id: changes
         run: |
-          echo "::group::Script"
           SUBSTANTIAL_CHANGES=true
           FAILED=false
           if [[ ${{ github.event.pull_request.head.repo.fork }} == false ]]; then
-            CHECK=$(grep SUBSTANTIAL_CHANGES danger.out || echo)
+            if [[ -f danger.out ]]; then 
+              CHECK=$(grep SUBSTANTIAL_CHANGES danger.out || echo)
+            fi
             [[ -z $CHECK ]] && SUBSTANTIAL_CHANGES=false
           fi
           CHECK=$(grep FAILED danger.out || echo)
           [[ -n $CHECK ]] && FAILED=true
-          echo "::endgroup::"
           echo "Do we have substantial changes? --> $SUBSTANTIAL_CHANGES"
           echo "Does Danger failed? --> $FAILED"
           echo "substantialChanges=$SUBSTANTIAL_CHANGES" >> $GITHUB_OUTPUT  
