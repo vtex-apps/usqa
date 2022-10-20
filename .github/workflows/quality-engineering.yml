@@ -260,6 +260,7 @@ jobs:
         run: |
           SUBSTANTIAL_CHANGES=true
           FAILED=false
+          ERR=0
           if [[ -f danger.out ]]; then
             # As the fork will not be always present, we need a little hack here
             if [[ "${{ github.event.pull_request.head.repo.fork }}X" != "X" ]]; then
@@ -270,11 +271,12 @@ jobs:
             fi
             CHECK=$(grep FAILED danger.out || echo)
             [[ -n $CHECK ]] && FAILED=true
+            [[ -n $CHECK ]] && ERR=99
           fi
           echo "Do we have substantial changes? --> $SUBSTANTIAL_CHANGES"
           echo "Does Danger failed? --> $FAILED"
           echo "substantialChanges=$SUBSTANTIAL_CHANGES" >> $GITHUB_OUTPUT  
-          [[ $FAILED == true ]] && exit 99
+          exit $ERR
 
   # -----------------------------------------------------------------------------------------
   # Job to run Lint (Node.js)
