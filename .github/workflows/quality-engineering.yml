@@ -225,14 +225,13 @@ jobs:
                 fail('Provide or increase the description for this PR [at least 10 chars]')
                 console.log('FAILED')
               }
-              keepachangelog({ changeVersion: true })
-              message(':tada: PR additions =  ' + additions + ', PR deletions = ' + deletions)
+              keepachangelog({ changeVersion: $REQUIRE_CHANGELOG_VERSION })
               message(':heart: Thanks!')
+              message(':tada: PR additions =  ' + additions + ', PR deletions = ' + deletions)
             }
           EOF_JS
           if [[ -f dangerfile.js ]]; then cat dangerfile.js >> danger.js; fi
-          ERR=0; yarn danger ci -d danger.js &> danger.out
-          cat danger.out
+          ERR=0; yarn danger ci -d danger.js | tee danger.out
 
       - name: "Check for substantial changes"
         if: always()
