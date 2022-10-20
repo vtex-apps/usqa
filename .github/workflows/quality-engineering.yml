@@ -201,32 +201,52 @@ jobs:
         run: |
           echo "::group::Create Danger.js base file"
           cat << EOF_JS > danger.js
-            const { fail, warn, message, danger } = require('danger')
-            const { keepachangelog } = require('danger-plugin-keepachangelog')      
-            const pr = danger.github?.pr
+            const { fail, warn, message, danger } = require("danger")
+            const { keepachangelog } = require("danger-plugin-keepachangelog")
+            const gb = danger.github
+            const pr = gb?.pr
             const { additions = 0, deletions = 0 } = pr
-            const github = danger.github
-            const modifiedFiles = danger.git?.created_files?.concat(danger.git?.deleted_files).concat(danger.git?.modified_files)
-            const code = danger.git.fileMatch('dotnet/**', 'react/**', 'node/**', '**/*.js', '**/*.ts',
-                                              'package.json', 'messages/en.json', 'messages/en-us.json')
-            const pkgs = danger.git.fileMatch('package.json', 'react/package.json', 'node/package.json')
-            const lock = danger.git.fileMatch('yarn.lock', 'react/yarn.lock', 'node/yarn.lock')
-            const tool = danger.git.fileMatch('.github', 'dangerfile.js', 'package.json', 'yarn.lock')
+            const modifiedFiles = danger.git?.created_files
+            .concat(danger.git?.deleted_files)
+            .concat(danger.git?.modified_files)
+            const code = danger.git.fileMatch("dotnet/**", "react/**", "node/**", "**/*.js", "**/*.ts",
+            "package.json", "messages/en.json", "messages/en-us.json")
+            const pkgs = danger.git.fileMatch("package.json", "react/package.json", "node/package.json")
+            const lock = danger.git.fileMatch("yarn.lock", "react/yarn.lock", "node/yarn.lock")
+            const tool = danger.git.fileMatch(".github", "dangerfile.js", "package.json", "yarn.lock")
             const pkgsChanged = pkgs.modified || pkgs.created || pkgs.deleted || pkgs.edited
             const lockChanged = lock.modified || lock.created || lock.deleted || lock.edited
             const toolChanged = tool.modified || tool.created || tool.deleted || tool.edited
-            if (github) {
-              if (code.modified || code.created || code.deleted || code.edited) console.log('SUBSTANTIAL_CHANGES')
-              if (toolChanged) warn(":stop_sign: This PR will change tooling [GitHub Actions, package.json, etc]") 
-              if (pkgsChanged != lockChanged) warn('package.json was changed, but not yarn.lock (vice-versa)')
-              if (modifiedFiles?.length > 15 || additions + deletions > 420) warn('Looks like this PR is too large')
+            const toolChangedConfirmation =  (pr.body + pr.title).includes("#changingTooling")
+            const skipPackageLockSync =  (pr.body + pr.title).includes("#skipPackageChecks")
+            if (gb) {
+              if (code.modified || code.created || code.deleted || code.edited) console.log("SUBSTANTIAL_CHANGES")
+              if (toolChanged) {
+                if (toolChangedConfirmation) {
+                  warn(":stop_sign: This PR **will change tooling**\n:bulb: Could be GitHub Actions, package.json, etc")
+                } else {
+                  fail("This PR **will change tooling**\n:bulb: add #changingTooling on your PR description as acknowledgment")
+                  console.log("FAILED")
+                }
+              }
+              if (pkgsChanged !== lockChanged) {
+                if (skipPackageLockSync) {
+                  warn("package.json was changed, but not yarn.lock (vice-versa)\n:bulb: are you sure this is right?")
+                } else {
+                  fail("package.json was changed, but not yarn.lock (vice-versa)\n:bulb: add #skipPackageChecks on your PR description as acknowledgment")
+                  console.log("FAILED")
+                }
+              }
+              if (modifiedFiles?.length > 15 || additions + deletions > 420) {
+                warn("Looks like this PR is too large\n:bulb: smaller PRs are easy to review and approve")
+              }
               if (pr.body?.length < 10) {
-                fail('Provide or increase the description for this PR [at least 10 chars]')
-                console.log('FAILED')
+                fail("Provide or increase the description for this PR\n:bulb: at least 10 chars... better it is, better will be to approve it")
+                console.log("FAILED")
               }
               keepachangelog({ changeVersion: $REQUIRE_CHANGELOG_VERSION })
-              message(':heart: Thanks!')
-              message(':tada: PR additions =  ' + additions + ', PR deletions = ' + deletions)
+              message(":heart: Thanks!")
+              message(":tada: PR additions =  " + additions + ", PR deletions = " + deletions)
             }
           EOF_JS
           if [[ -f dangerfile.js ]]; then cat dangerfile.js >> danger.js; fi
