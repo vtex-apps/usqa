@@ -252,7 +252,7 @@ jobs:
   # Job to run Lint (Node.js)
   # -----------------------------------------------------------------------------------------
   nodeLint:
-    name: 'Lint Node.js'
+    name: "Lint Node.js"
     if: ${{ inputs.nodeLint || inputs.nodeSonar || inputs.nodeTest }}
     runs-on: ubuntu-latest
     needs: [safeCheck, danger]
@@ -269,7 +269,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
 
-      - name: 'Lint JSON'
+      - name: "Lint JSON"
         run: |
           echo "::group::Lint Json"
           FAILED=0
@@ -294,14 +294,14 @@ jobs:
             exit 1;
           fi
 
-      - name: 'Set up Node.js'
+      - name: "Set up Node.js"
         if: needs.danger.outputs.substantialChanges == 'true' || github.event_name == 'push'
         uses: actions/setup-node@v3
         with:
           cache: yarn
         continue-on-error: true
 
-      - name: 'Install packages'
+      - name: "Install packages"
         if: needs.danger.outputs.substantialChanges == 'true' || github.event_name == 'push'
         run: |
           echo "==> Installing root packages..."
@@ -316,220 +316,237 @@ jobs:
             fi
           done
 
-      - name: 'Run lint'
+      - name: "Run lint"
         if: needs.danger.outputs.substantialChanges == 'true' || github.event_name == 'push'
         run: |
           echo "::group::Lint Node.js"
           yarn lint
           echo "::endgroup::"
-#
-#  # -----------------------------------------------------------------------------------------
-#  # Job to run tests (Node.js on node folder)
-#  # -----------------------------------------------------------------------------------------
-#  nodeTest:
-#    name: 'Test Node.js'
-#    if: ${{ inputs.nodeTest }}
-#    runs-on: ubuntu-latest
-#    needs: [safeCheck]
-#    timeout-minutes: 5
-#    steps:
-#      - name: 'Trusted checkout'
-#        uses: actions/checkout@v3
-#        if: ( github.event.pull_request.head.repo.fork == false )
-#      - name: 'Untrusted checkout'
-#        uses: actions/checkout@v3
-#        if: ( github.event.pull_request.head.repo.fork == true )
-#        with:
-#          ref: ${{ github.event.pull_request.head.ref }}
-#          repository: ${{ github.event.pull_request.head.repo.full_name }}
-#      - name: 'Set up Node.js'
-#        uses: actions/setup-node@v3
-#        with:
-#          node-version: 16
-#          cache: yarn
-#        continue-on-error: true
-#      - name: 'Install dependencies'
-#        run: |
-#          echo "==> Installing root packages..."
-#          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
-#          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
-#            # checkout-ui-custom has a bug on package.json installation, so let's skip it
-#            if [[ $DIR != 'checkout-ui-custom' ]]; then
-#              echo "==> Installing $DIR packages..."
-#              cd "$DIR"
-#              yarn install --frozen-lockfile
-#              cd -
-#            fi
-#          done
-#      - name: 'Run unit tests on node folder'
-#        run: yarn test --coverage
-#        working-directory: node
-#
-#  # -----------------------------------------------------------------------------------------
-#  # Job to run tests (Node.js on react folder)
-#  # -----------------------------------------------------------------------------------------
-#  reactTest:
-#    name: 'Test React'
-#    if: ${{ inputs.reactTest }}
-#    runs-on: ubuntu-latest
-#    needs: [safeCheck]
-#    timeout-minutes: 5
-#    steps:
-#      - name: 'Trusted checkout'
-#        uses: actions/checkout@v3
-#        if: ( github.event.pull_request.head.repo.fork == false )
-#      - name: 'Untrusted checkout'
-#        uses: actions/checkout@v3
-#        if: ( github.event.pull_request.head.repo.fork == true )
-#        with:
-#          ref: ${{ github.event.pull_request.head.ref }}
-#          repository: ${{ github.event.pull_request.head.repo.full_name }}
-#      - name: 'Set up Node.js'
-#        uses: actions/setup-node@v3
-#        with:
-#          node-version: 16
-#          cache: yarn
-#        continue-on-error: true
-#      - name: 'Install dependencies'
-#        run: |
-#          echo "==> Installing root packages..."
-#          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
-#          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
-#            # checkout-ui-custom has a bug on package.json installation, so let's skip it
-#            if [[ $DIR != 'checkout-ui-custom' ]]; then
-#              echo "==> Installing $DIR packages..."
-#              cd "$DIR"
-#              yarn install --frozen-lockfile
-#              cd -
-#            fi
-#          done
-#      - name: 'Run unit tests on react folder'
-#        run: yarn test --coverage
-#        working-directory: react
-#
-#  # -----------------------------------------------------------------------------------------
-#  # Job to run SonarCloud (Node.js)
-#  # -----------------------------------------------------------------------------------------
-#  nodeSonar:
-#    name: 'Scan Node.js'
-#    if: |
-#      always()
-#      && ( inputs.nodeSonar )
-#      && ( github.actor != 'dependabot[bot]' )
-#      && ( github.event.pull_request.draft == false )
-#      && ( needs.safeCheck.result == 'success')
-#      && ( needs.nodeLint.result == 'success' || needs.nodeLint.result == 'skipped')
-#      && ( needs.nodeTest.result == 'success' || needs.nodeTest.result == 'skipped')
-#      && ( needs.reactTest.result == 'success' || needs.reactTest.result == 'skipped')
-#    runs-on: ubuntu-latest
-#    needs: [safeCheck, nodeLint, nodeTest, reactTest]
-#    timeout-minutes: 5
-#    concurrency:
-#      group: ${{ github.workflow }}-${{ github.ref }}-nodejs
-#    steps:
-#      - name: 'Trusted checkout'
-#        uses: actions/checkout@v3
-#        if: ( github.event.pull_request.head.repo.fork == false )
-#        with:
-#          fetch-depth: 0
-#      - name: 'Untrusted checkout'
-#        uses: actions/checkout@v3
-#        if: ( github.event.pull_request.head.repo.fork == true )
-#        with:
-#          ref: ${{ github.event.pull_request.head.ref }}
-#          repository: ${{ github.event.pull_request.head.repo.full_name }}
-#          fetch-depth: 0
-#      - name: 'Set up Node.js'
-#        uses: actions/setup-node@v3
-#        with:
-#          node-version: 16
-#          cache: yarn
-#        continue-on-error: true
-#      - name: 'Install packages'
-#        run: |
-#          echo "==> Installing root packages..."
-#          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
-#          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
-#            # checkout-ui-custom has a bug on package.json installation, so let's skip it
-#            if [[ $DIR != 'checkout-ui-custom' ]]; then
-#              echo "==> Installing $DIR packages..."
-#              cd "$DIR"
-#              yarn install --frozen-lockfile
-#              cd -
-#            fi
-#          done
-#      - name: 'Gererate Node coverage report'
-#        if: ${{ inputs.nodeTest }}
-#        run: yarn test --coverage
-#        working-directory: node
-#      - name: 'Gererate React coverage report'
-#        if: ${{ inputs.reactTest }}
-#        run: yarn test --coverage
-#        working-directory: react
-#      - name: 'Trusted SonarCloud Scan'
-#        if: ( github.event.pull_request.head.repo.fork == false )
-#        uses: SonarSource/sonarcloud-github-action@v1.7
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.githubToken }}
-#          SONAR_TOKEN: ${{ secrets.sonarToken }}
-#        with:
-#          args: >
-#            -Dsonar.projectKey=${{ inputs.nodeSonarProjectKey }}
-#            -Dsonar.organization=${{ inputs.nodeSonarOrganization }}
-#      - name: 'Untrusted SonarCloud Scan'
-#        if: ( github.event.pull_request.head.repo.fork == true )
-#        uses: SonarSource/sonarcloud-github-action@v1.7
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.githubToken }}
-#          SONAR_TOKEN: ${{ secrets.sonarToken }}
-#        with:
-#          args: >
-#            -Dsonar.projectKey=${{ inputs.nodeSonarProjectKey }}
-#            -Dsonar.organization=${{ inputs.nodeSonarOrganization }}
-#            -Dsonar.pullrequest.key=${{ github.event.pull_request.number }}
-#            -Dsonar.pullrequest.branch=${{ github.event.pull_request.head.ref }}
-#            -Dsonar.scm.revision=${{ github.event.pull_request.head.sha }}
-#      - name: 'Process SonarCloud results'
-#        working-directory: .scannerwork
-#        run: |
-#          TASK_URL=$(sed -nr 's/ceTaskUrl=(.*)/\1/p' report-task.txt)
-#          STATUS='FAILURE'
-#          MAX_TRY=3
-#          TRY=1
-#          while [[ $STATUS != 'SUCCESS' && $TRY -le $MAX_TRY ]]; do
-#            echo -n "Trying to get status from SonarCloud ($TRY of $MAX_TRY)... "
-#            sleep 5
-#            STATUS=$(curl -s -u $SONAR_TOKEN: $TASK_URL | jq .task.status | sed s/\"//g)
-#            echo "$STATUS."
-#            TRY=$(( $TRY + 1 ))
-#          done
-#          if [[ $STATUS == 'SUCCESS' ]]; then
-#            echo -n "Trying to get analysis ID from SonarCloud... "
-#            sleep 5
-#            ANALISYS_ID=$(curl -s -u $SONAR_TOKEN: $TASK_URL | jq -r .task.analysisId)
-#            echo "$ANALISYS_ID."
-#            TRY=1
-#            GATE_API='https://sonarcloud.io/api/qualitygates'
-#            while [[ $GATE_STATUS != 'OK' &&  $GATE_STATUS != 'ERROR' ]]; do
-#              echo -n "Checking Quality Gate info ($TRY)... "
-#              sleep 5
-#              GATE_STATUS=$(curl -s -u $SONAR_TOKEN: "$GATE_API/project_status?analysisId=${ANALISYS_ID}" | jq -r .projectStatus.status)
-#              echo "$GATE_STATUS."
-#             TRY=$(( $TRY + 1 ))
-#            done
-#            if [[ $GATE_STATUS == 'OK' ]]; then
-#              exit 0
-#            else
-#              echo 'The quality gate failed. Please, review the reasons on SonarCloud!'
-#              exit 1
-#            fi
-#          else
-#            echo 'The analisys failed. Please, review your settings and sonar token!'
-#            exit 1
-#          fi
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.githubToken }}
-#          SONAR_TOKEN: ${{ secrets.sonarToken }}
+
+  # -----------------------------------------------------------------------------------------
+  # Job to run tests (Node.js on node folder)
+  # -----------------------------------------------------------------------------------------
+  nodeTest:
+    name: "Test Node.js"
+    if: ${{ inputs.nodeTest }}
+    runs-on: ubuntu-latest
+    needs: [safeCheck, danger]
+    timeout-minutes: 5
+    steps:
+      - name: "Trusted checkout"
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
+        if: github.event.pull_request.head.repo.fork == false
+
+      - name: "Untrusted checkout"
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
+        if: github.event.pull_request.head.repo.fork == true
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+
+      - name: "Set up Node.js"
+        uses: actions/setup-node@v3
+        with:
+          cache: yarn
+        continue-on-error: true
+
+      - name: "Install dependencies"
+        run: |
+          echo "==> Installing root packages..."
+          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
+            # checkout-ui-custom has a bug on package.json installation, so let's skip it
+            if [[ $DIR != 'checkout-ui-custom' ]]; then
+              echo "==> Installing $DIR packages..."
+              cd "$DIR"
+              yarn install --frozen-lockfile
+              cd -
+            fi
+          done
+
+      - name: "Run unit tests on node folder"
+        run: |
+          echo "::group::Unit tests - node folder"
+          yarn test --coverage
+          echo "::endgroup::"
+        working-directory: node
+
+  # -----------------------------------------------------------------------------------------
+  # Job to run tests (Node.js on react folder)
+  # -----------------------------------------------------------------------------------------
+  reactTest:
+    name: "Test React"
+    if: ${{ inputs.reactTest }}
+    runs-on: ubuntu-latest
+    needs: [safeCheck, danger]
+    timeout-minutes: 5
+    steps:
+      - name: "Trusted checkout"
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
+        if: github.event.pull_request.head.repo.fork == false
+
+      - name: "Untrusted checkout"
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
+        if: github.event.pull_request.head.repo.fork == true
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+
+      - name: "Set up Node.js"
+        uses: actions/setup-node@v3
+        with:
+          cache: yarn
+        continue-on-error: true
+
+      - name: "Install dependencies"
+        run: |
+          echo "==> Installing root packages..."
+          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
+            # checkout-ui-custom has a bug on package.json installation, so let's skip it
+            if [[ $DIR != 'checkout-ui-custom' ]]; then
+              echo "==> Installing $DIR packages..."
+              cd "$DIR"
+              yarn install --frozen-lockfile
+              cd -
+            fi
+          done
+
+      - name: "Run unit tests on react folder"
+        run: |
+          echo "::group::Unit tests - react folder"
+          yarn test --coverage
+          echo "::endgroup::"
+        working-directory: react
+
+  # -----------------------------------------------------------------------------------------
+  # Job to run SonarCloud (Node.js)
+  # -----------------------------------------------------------------------------------------
+  nodeSonar:
+    name: "Scan Node.js"
+    if: |
+      always()
+      && ( inputs.nodeSonar )
+      && ( github.actor != 'dependabot[bot]' )
+      && ( github.event.pull_request.draft == false )
+      && ( needs.safeCheck.result == 'success')
+      && ( needs.danger.result == 'success')
+      && ( needs.nodeLint.result == 'success' || needs.nodeLint.result == 'skipped')
+      && ( needs.nodeTest.result == 'success' || needs.nodeTest.result == 'skipped')
+      && ( needs.reactTest.result == 'success' || needs.reactTest.result == 'skipped')
+    runs-on: ubuntu-latest
+    needs: [safeCheck, danger, nodeLint, nodeTest, reactTest]
+    timeout-minutes: 5
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-nodejs
+    steps:
+      - name: "Trusted checkout"
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
+        if: github.event.pull_request.head.repo.fork == false
+
+      - name: "Untrusted checkout"
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
+        if: github.event.pull_request.head.repo.fork == true
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+
+      - name: "Set up Node.js"
+        uses: actions/setup-node@v3
+        with:
+          cache: yarn
+        continue-on-error: true
+
+      - name: "Install packages"
+        run: |
+          echo "==> Installing root packages..."
+          [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+          for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
+            # checkout-ui-custom has a bug on package.json installation, so let's skip it
+            if [[ $DIR != 'checkout-ui-custom' ]]; then
+              echo "==> Installing $DIR packages..."
+              cd "$DIR"
+              yarn install --frozen-lockfile
+              cd -
+            fi
+          done
+
+      - name: "Generate Node coverage report"
+        if: ${{ inputs.nodeTest }}
+        run: yarn test --coverage
+        working-directory: node
+
+      - name: "Generate React coverage report"
+        if: ${{ inputs.reactTest }}
+        run: yarn test --coverage
+        working-directory: react
+
+      - name: "Trusted SonarCloud Scan"
+        if: github.event.pull_request.head.repo.fork == false
+        uses: SonarSource/sonarcloud-github-action@156db6fef3e168e4972abb76de0b32bbce8ec77a # v1.7
+        env:
+          GITHUB_TOKEN: ${{ secrets.githubToken }}
+          SONAR_TOKEN: ${{ secrets.sonarToken }}
+        with:
+          args: >
+            -Dsonar.projectKey=${{ inputs.nodeSonarProjectKey }}
+            -Dsonar.organization=${{ inputs.nodeSonarOrganization }}
+
+      - name: "Untrusted SonarCloud Scan"
+        if: github.event.pull_request.head.repo.fork == true
+        uses: SonarSource/sonarcloud-github-action@156db6fef3e168e4972abb76de0b32bbce8ec77a # v1.7
+        env:
+          GITHUB_TOKEN: ${{ secrets.githubToken }}
+          SONAR_TOKEN: ${{ secrets.sonarToken }}
+        with:
+          args: >
+            -Dsonar.projectKey=${{ inputs.nodeSonarProjectKey }}
+            -Dsonar.organization=${{ inputs.nodeSonarOrganization }}
+            -Dsonar.pullrequest.key=${{ github.event.pull_request.number }}
+            -Dsonar.pullrequest.branch=${{ github.event.pull_request.head.ref }}
+            -Dsonar.scm.revision=${{ github.event.pull_request.head.sha }}
+
+      - name: "Process SonarCloud results"
+        env:
+          GITHUB_TOKEN: ${{ secrets.githubToken }}
+          SONAR_TOKEN: ${{ secrets.sonarToken }}
+        run: |
+          TASK_URL=$(sed -nr 's/ceTaskUrl=(.*)/\1/p' report-task.txt)
+          STATUS='FAILURE'
+          MAX_TRY=5
+          TRY=1
+          while [[ $STATUS != 'SUCCESS' && $TRY -le $MAX_TRY ]]; do
+            echo -n "Trying to get status from SonarCloud ($TRY of $MAX_TRY)... "
+            sleep 5
+            STATUS=$(curl -s -u $SONAR_TOKEN: $TASK_URL | jq .task.status | sed s/\"//g)
+            echo "$STATUS."
+            TRY=$(( $TRY + 1 ))
+          done
+          if [[ $STATUS == 'SUCCESS' ]]; then
+            echo -n "Trying to get analysis ID from SonarCloud... "
+            sleep 5
+            ANALISYS_ID=$(curl -s -u $SONAR_TOKEN: $TASK_URL | jq -r .task.analysisId)
+            echo "$ANALISYS_ID."
+            TRY=1
+            GATE_API='https://sonarcloud.io/api/qualitygates'
+            while [[ $GATE_STATUS != 'OK' &&  $GATE_STATUS != 'ERROR' ]]; do
+              echo -n "Checking Quality Gate info ($TRY)... "
+              sleep 5
+              GATE_STATUS=$(curl -s -u $SONAR_TOKEN: "$GATE_API/project_status?analysisId=${ANALISYS_ID}" | jq -r .projectStatus.status)
+              echo "$GATE_STATUS."
+             TRY=$(( $TRY + 1 ))
+            done
+            if [[ $GATE_STATUS == 'OK' ]]; then
+              exit 0
+            else
+              echo "The quality gate failed. Please, review the reasons on SonarCloud!"
+              exit 1
+            fi
+          else
+            echo 'The analysis failed. Please, review your settings and sonar token!'
+            exit 2
+          fi
+        working-directory: .scannerwork
 #
 #
 #  # -----------------------------------------------------------------------------------------
