@@ -220,7 +220,6 @@ jobs:
               if (toolChanged) warn(":stop_sign: This PR will change tooling [GitHub Actions, package.json, etc]") 
               if (pkgsChanged != lockChanged) warn('package.json was changed, but not yarn.lock (vice-versa)')
               if (modifiedFiles?.length > 15 || additions + deletions > 420) warn('Looks like this PR is too large')
-              if (!github.requested_reviewers?.length) warn('No reviewer has been set')
               if (pr.body?.length < 10) {
                 fail('Provide or increase the description for this PR [at least 10 chars]')
                 console.log('FAILED')
