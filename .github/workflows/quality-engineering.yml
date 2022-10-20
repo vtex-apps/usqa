@@ -275,7 +275,7 @@ jobs:
           echo "Does Danger failed? --> $FAILED"
           echo "substantialChanges=$SUBSTANTIAL_CHANGES" >> $GITHUB_OUTPUT  
           if [[ $FAILED == true ]]; then 
-            ::error title=Danger.js::Danger.js failed, please fix it and try again.
+            echo "::error title=Danger.js::Danger.js failed, please fix it and try again."
             exit 99
           fi
 
