@@ -274,7 +274,10 @@ jobs:
           echo "Do we have substantial changes? --> $SUBSTANTIAL_CHANGES"
           echo "Does Danger failed? --> $FAILED"
           echo "substantialChanges=$SUBSTANTIAL_CHANGES" >> $GITHUB_OUTPUT  
-          [[ $FAILED == true ]] && exit 99
+          if [[ $FAILED == true ]]; then 
+            ::error title=Danger.js::Danger.js failed, please fix it and try again.
+            exit 99
+          fi
 
   # -----------------------------------------------------------------------------------------
   # Job to run Lint (Node.js)
