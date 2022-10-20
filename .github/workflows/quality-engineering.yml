@@ -223,17 +223,17 @@ jobs:
               if (code.modified || code.created || code.deleted || code.edited) console.log("SUBSTANTIAL_CHANGES")
               if (toolChanged) {
                 if (toolChangedConfirmation) {
-                  warn(":stop_sign: This PR **will change tooling** [:bulb: Could be GitHub Actions, package.json, etc]")
+                  warn(":stop_sign: This PR will change tooling [:bulb: could be GitHub Actions, \`package.json\`, etc]")
                 } else {
-                  fail("This PR **will change tooling** [:bulb: add \`#changingTooling\` on your PR description as acknowledgment]")
+                  fail("This PR will change tooling [:bulb: add \`#changingTooling\` on your description as ack to pass]")
                   console.log("FAILED")
                 }
               }
               if (pkgsChanged !== lockChanged) {
                 if (skipPackageLockSync) {
-                  warn("package.json was changed, but not yarn.lock (vice-versa) [:bulb: are you sure this is right?]")
+                  warn("\`package.json\` was changed, but not \`yarn.lock\` (vice-versa) [:bulb: are you sure this is right?]")
                 } else {
-                  fail("package.json was changed, but not yarn.lock (vice-versa) [:bulb: add \`#skipPackageChecks\` on your PR description as acknowledgment]")
+                  fail("\`package.json\` was changed, but not \`yarn.lock\` (vice-versa) [:bulb: add \`#skipPackageChecks\` on your description as ack to pass]")
                   console.log("FAILED")
                 }
               }
@@ -241,7 +241,7 @@ jobs:
                 warn("Looks like this PR is too large [:bulb: smaller PRs are easy to review and approve]")
               }
               if (pr.body?.length < 10) {
-                fail("Provide or increase the description for this PR [:bulb: at least 10 chars... better it is, better will be to approve it]")
+                fail("Provide better description for this PR [:bulb: at least 10 chars, better it is, easier will be to review]")
                 console.log("FAILED")
               }
               keepachangelog({ changeVersion: $REQUIRE_CHANGELOG_VERSION })
