@@ -160,8 +160,10 @@ jobs:
       - name: "Remove the label 'safe to test' to avoid run again on changed code"
         if: contains(github.event.pull_request.labels.*.name, 'safe to test')
         run: |
+          echo "::group::Delete label"
           curl -sfX DELETE -H 'Accept: application/vnd.github.v3+json' -H 'Authorization: token ${{ secrets.githubToken }}' \
           'https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.number }}/labels/safe%20to%20test' &> /dev/null
+          echo "::endgroup::"
 
       - name: "Trusted checkout"
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
@@ -178,18 +180,21 @@ jobs:
         uses: actions/setup-node@8c91899e586c5b171469028077307d293428b516 # v3.5.1
         with:
           cache: yarn
+          cache-dependency-path: "**/yarn.lock"
         continue-on-error: true
 
       - name: "Install Danger.js"
         run: |
+          echo "::group::Install Danger.js"
           yarn add --dev danger@11 danger-plugin-keepachangelog@1
-          git checkout package.json yarn.lock
+          echo "::endgroup::"
 
       - name: "Run Danger.js"
         env:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
           REQUIRE_CHANGELOG_VERSION: ${{ inputs.dangerRequireChangelog }}
-        run: |          
+        run: |
+          echo "::group::Create Danger.js base file"
           cat << EOF_JS > danger.js
             const { fail, warn, message, danger } = require('danger')
             const { keepachangelog } = require('danger-plugin-keepachangelog')      
@@ -221,11 +226,15 @@ jobs:
             }
           EOF_JS
           if [[ -f dangerfile.js ]]; then cat dangerfile.js >> danger.js; fi
+          echo "::endgroup::"
+          echo "::group::Run Danger.js"
           yarn danger ci -d danger.js &> danger.out
+          echo "::endgroup::"
 
       - name: "Check for substantial changes"
         id: changes
         run: |
+          echo "::group::Script"
           SUBSTANTIAL_CHANGES=true
           FAILED=false
           if [[ ${{ github.event.pull_request.head.repo.fork }} == false ]]; then
@@ -234,9 +243,10 @@ jobs:
           fi
           CHECK=$(grep FAILED danger.out || echo)
           [[ -n $CHECK ]] && FAILED=true
+          echo "::endgroup::"
           echo "Do we have substantial changes? --> $SUBSTANTIAL_CHANGES"
           echo "Does Danger failed? --> $FAILED"
-          echo "substantialChanges=$SUBSTANTIAL_CHANGES" >> $GITHUB_OUTPUT       
+          echo "substantialChanges=$SUBSTANTIAL_CHANGES" >> $GITHUB_OUTPUT  
 
   # -----------------------------------------------------------------------------------------
   # Job to run Lint (Node.js)
@@ -280,29 +290,29 @@ jobs:
             fi
           done
           echo "::endgroup::"
-          if [[ $FAILED -eq 1 ]]; then
-            exit 1;
-          fi
+          if [[ $FAILED -eq 1 ]]; then exit 1; fi
 
       - name: "Set up Node.js"
         if: needs.safeCheck.outputs.substantialChanges == 'true' || github.event_name == 'push'
         uses: actions/setup-node@8c91899e586c5b171469028077307d293428b516 # v3.5.1
         with:
           cache: yarn
+          cache-dependency-path: "**/yarn.lock"
         continue-on-error: true
 
       - name: "Install packages"
         if: needs.safeCheck.outputs.substantialChanges == 'true' || github.event_name == 'push'
         run: |
-          echo "==> Installing root packages..."
+          echo "::group::Install root packages"
           [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+          echo "::endgroup::"
           for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
-            # checkout-ui-custom has a bug on package.json installation, so let's skip it
             if [[ $DIR != 'checkout-ui-custom' ]]; then
-              echo "==> Installing $DIR packages..."
+              echo "::group::Install $DIR packages"
               cd "$DIR"
               yarn install --frozen-lockfile
               cd -
+              echo "::endgroup::"
             fi
           done
 
@@ -338,19 +348,21 @@ jobs:
         uses: actions/setup-node@8c91899e586c5b171469028077307d293428b516 # v3.5.1
         with:
           cache: yarn
+          cache-dependency-path: "**/yarn.lock"
         continue-on-error: true
 
-      - name: "Install dependencies"
+      - name: "Install packages"
         run: |
-          echo "==> Installing root packages..."
+          echo "::group::Install root packages"
           [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+          echo "::endgroup::"
           for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
-            # checkout-ui-custom has a bug on package.json installation, so let's skip it
             if [[ $DIR != 'checkout-ui-custom' ]]; then
-              echo "==> Installing $DIR packages..."
+              echo "::group::Install $DIR packages"
               cd "$DIR"
               yarn install --frozen-lockfile
               cd -
+              echo "::endgroup::"
             fi
           done
 
@@ -386,19 +398,21 @@ jobs:
         uses: actions/setup-node@8c91899e586c5b171469028077307d293428b516 # v3.5.1
         with:
           cache: yarn
+          cache-dependency-path: "**/yarn.lock"
         continue-on-error: true
 
-      - name: "Install dependencies"
+      - name: "Install packages"
         run: |
-          echo "==> Installing root packages..."
+          echo "::group::Install root packages"
           [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+          echo "::endgroup::"
           for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
-            # checkout-ui-custom has a bug on package.json installation, so let's skip it
             if [[ $DIR != 'checkout-ui-custom' ]]; then
-              echo "==> Installing $DIR packages..."
+              echo "::group::Install $DIR packages"
               cd "$DIR"
               yarn install --frozen-lockfile
               cd -
+              echo "::endgroup::"
             fi
           done
 
@@ -414,8 +428,7 @@ jobs:
   # -----------------------------------------------------------------------------------------
   nodeSonar:
     name: "Scan Node.js"
-    if: |
-      always()
+    if: always()
       && ( inputs.nodeSonar )
       && ( github.actor != 'dependabot[bot]' )
       && ( github.event.pull_request.draft == false )
@@ -445,19 +458,21 @@ jobs:
         uses: actions/setup-node@8c91899e586c5b171469028077307d293428b516 # v3.5.1
         with:
           cache: yarn
+          cache-dependency-path: "**/yarn.lock"
         continue-on-error: true
 
       - name: "Install packages"
         run: |
-          echo "==> Installing root packages..."
+          echo "::group::Install root packages"
           [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+          echo "::endgroup::"
           for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
-            # checkout-ui-custom has a bug on package.json installation, so let's skip it
             if [[ $DIR != 'checkout-ui-custom' ]]; then
-              echo "==> Installing $DIR packages..."
+              echo "::group::Install $DIR packages"
               cd "$DIR"
               yarn install --frozen-lockfile
               cd -
+              echo "::endgroup::"
             fi
           done
 
@@ -501,6 +516,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
           SONAR_TOKEN: ${{ secrets.sonarToken }}
         run: |
+          echo "::group::Read SonarCloud job details"
           TASK_URL=$(sed -nr 's/ceTaskUrl=(.*)/\1/p' report-task.txt)
           STATUS='FAILURE'
           MAX_TRY=5
@@ -512,7 +528,9 @@ jobs:
             echo "$STATUS."
             TRY=$(( $TRY + 1 ))
           done
+          echo "::endgroup::"
           if [[ $STATUS == 'SUCCESS' ]]; then
+            echo "::group::Read SonarCloud analysis results"
             echo -n "Trying to get analysis ID from SonarCloud... "
             sleep 5
             ANALISYS_ID=$(curl -s -u $SONAR_TOKEN: $TASK_URL | jq -r .task.analysisId)
@@ -532,6 +550,7 @@ jobs:
               echo "The quality gate failed. Please, review the reasons on SonarCloud!"
               exit 1
             fi
+            echo "::endgroup::"
           else
             echo 'The analysis failed. Please, review your settings and sonar token!'
             exit 2
@@ -591,9 +610,12 @@ jobs:
           dotnet-version: ${{ inputs.dotnetVersion }}
 
       - name: "Restore .Net packages"
-        run: dotnet restore
+        run: |
+          echo "::group::Restore packages"
+          dotnet restore
+          echo "::endgroup::"
 
-      - name: "Build .Net"
+      - name: "Lint .Net"
         run: |
           echo "::group::Lint .Net"
           dotnet build --configuration Release --no-restore
@@ -627,7 +649,9 @@ jobs:
           dotnet-version: ${{ inputs.dotnetVersion }}
 
       - name: "Restore .Net packages"
-        run: dotnet restore
+          echo "::group::Restore packages"
+          dotnet restore
+          echo "::endgroup::"
 
       - name: "Build .Net"
         run: |
@@ -646,8 +670,7 @@ jobs:
   # -----------------------------------------------------------------------------------------
   dotnetSonar:
     name: "Scan .Net"
-    if: |
-      always()
+    if: always()
       && ( inputs.dotnetSonar )
       && ( github.actor != 'dependabot[bot]' )
       && ( github.event.pull_request.draft == false )
@@ -715,8 +738,7 @@ jobs:
   # -----------------------------------------------------------------------------------------
   cypress:
     name: 'E2E'
-    if: |
-      always()
+    if: always()
       && ( inputs.cypress )
       && ( github.actor != 'dependabot[bot]' )
       && ( github.event.pull_request.draft == false )
@@ -756,13 +778,13 @@ jobs:
           path: cy-runner
 
       - name: "Set up Node.js"
-        if: |
-          needs.safeCheck.outputs.substantialChanges == 'true'
+        if: needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
         uses: actions/setup-node@8c91899e586c5b171469028077307d293428b516 # v3.5.1
         with:
           cache: yarn
+          cache-dependency-path: "cy-runner/yarn.lock"
         continue-on-error: true
 
       - name: "Install packages"
@@ -770,15 +792,16 @@ jobs:
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
         run: |
-          echo "==> Installing root packages..."
+          echo "::group::Install root packages"
           [[ -f 'package.json' ]] && yarn install --frozen-lockfile
+          echo "::endgroup::"
           for DIR in $(find -mindepth 2 -maxdepth 2 -name package.json | cut -d/ -f2); do
-            # checkout-ui-custom has a bug on package.json installation, so let's skip it
             if [[ $DIR != 'checkout-ui-custom' ]]; then
-              echo "==> Installing $DIR packages..."
+              echo "::group::Install $DIR packages"
               cd "$DIR"
               yarn install --frozen-lockfile
               cd -
+              echo "::endgroup::"
             fi
           done
 
@@ -833,7 +856,8 @@ jobs:
                node cy-runner/node/lock.js reserve
             fi
           fi
-          echo && echo "::set-output name=unlock::$LOCK"
+          echo 
+          echo "unlock=$LOCK" >> $GITHUB_ENV
 
       - name: "Run Cy-Runner"
         if: needs.safeCheck.outputs.substantialChanges == 'true'
@@ -853,8 +877,8 @@ jobs:
           LOGS='false'
           [[ -f logs/_cy-decorator.txt ]] && DECORATOR='true'
           [[ -f logs/_cy-runner.log ]] && LOGS='true'
-          echo "::set-output name=decorator::$DECORATOR"
-          echo "::set-output name=logs::$LOGS"
+          echo "decorator=$DECORATOR" >> $GITHUB_ENV
+          echo "logs=$LOGS" >> $GITHUB_ENV
         working-directory: cy-runner
         continue-on-error: true
 
@@ -875,7 +899,7 @@ jobs:
 
       - name: "Sanitize logs"
         if: always() && steps.cyr.outputs.logs == 'true'
-        run: sed -i -e /Bearer/d -e /Basic/d $(ls *.{json,yml,yaml,txt,log} | xargs)
+        run: sed -i -e /Bearer/d -e /Basic/d $(ls *.{json,yml,yaml,txt,log} 2> /dev/null | xargs)
         working-directory: cy-runner/logs
 
       - name: "Save artifacts"
