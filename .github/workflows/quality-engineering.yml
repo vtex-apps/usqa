@@ -234,7 +234,6 @@ jobs:
           ERR=0; yarn danger ci -d danger.js | tee danger.out
 
       - name: "Check for substantial changes"
-        if: always()
         id: changes
         run: |
           SUBSTANTIAL_CHANGES=true
@@ -250,7 +249,6 @@ jobs:
           echo "Do we have substantial changes? --> $SUBSTANTIAL_CHANGES"
           echo "Does Danger failed? --> $FAILED"
           echo "substantialChanges=$SUBSTANTIAL_CHANGES" >> $GITHUB_OUTPUT       
-          exit $EXIT_CODE
 
   # -----------------------------------------------------------------------------------------
   # Job to run Lint (Node.js)
