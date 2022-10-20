@@ -845,7 +845,7 @@ jobs:
         if: needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
           || github.event_name == 'workflow_dispatch'
-        uses: vtex/action-toolbelt@v7
+        uses: vtex/action-toolbelt@v8
         with:
           account: productusqa
           jsonFile: cy-runner/.VTEX_QE.json
