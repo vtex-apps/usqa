@@ -223,30 +223,30 @@ jobs:
               if (code.modified || code.created || code.deleted || code.edited) console.log("SUBSTANTIAL_CHANGES")
               if (toolChanged) {
                 if (toolChangedConfirmation) {
-                  warn(":stop_sign: This PR **will change tooling**\n:bulb: Could be GitHub Actions, package.json, etc")
+                  warn(":stop_sign: This PR **will change tooling** [:bulb: Could be GitHub Actions, package.json, etc"]
                 } else {
-                  fail("This PR **will change tooling**\n:bulb: add #changingTooling on your PR description as acknowledgment")
+                  fail("This PR **will change tooling** [:bulb: add \`#changingTooling\` on your PR description as acknowledgment]")
                   console.log("FAILED")
                 }
               }
               if (pkgsChanged !== lockChanged) {
                 if (skipPackageLockSync) {
-                  warn("package.json was changed, but not yarn.lock (vice-versa)\n:bulb: are you sure this is right?")
+                  warn("package.json was changed, but not yarn.lock (vice-versa) [:bulb: are you sure this is right?]")
                 } else {
-                  fail("package.json was changed, but not yarn.lock (vice-versa)\n:bulb: add #skipPackageChecks on your PR description as acknowledgment")
+                  fail("package.json was changed, but not yarn.lock (vice-versa) [:bulb: add \`#skipPackageChecks\` on your PR description as acknowledgment]")
                   console.log("FAILED")
                 }
               }
               if (modifiedFiles?.length > 15 || additions + deletions > 420) {
-                warn("Looks like this PR is too large\n:bulb: smaller PRs are easy to review and approve")
+                warn("Looks like this PR is too large [:bulb: smaller PRs are easy to review and approve]")
               }
               if (pr.body?.length < 10) {
-                fail("Provide or increase the description for this PR\n:bulb: at least 10 chars... better it is, better will be to approve it")
+                fail("Provide or increase the description for this PR [:bulb: at least 10 chars... better it is, better will be to approve it]")
                 console.log("FAILED")
               }
               keepachangelog({ changeVersion: $REQUIRE_CHANGELOG_VERSION })
               message(":heart: Thanks!")
-              message(":tada: PR additions =  " + additions + ", PR deletions = " + deletions)
+              message(":tada: PR additions =  \`" + additions + "\`, PR deletions = \`" + deletions + "\`")
             }
           EOF_JS
           if [[ -f dangerfile.js ]]; then cat dangerfile.js >> danger.js; fi
@@ -274,6 +274,7 @@ jobs:
           echo "Do we have substantial changes? --> $SUBSTANTIAL_CHANGES"
           echo "Does Danger failed? --> $FAILED"
           echo "substantialChanges=$SUBSTANTIAL_CHANGES" >> $GITHUB_OUTPUT  
+          [[ $FAILED == true ]] && exit 99
 
   # -----------------------------------------------------------------------------------------
   # Job to run Lint (Node.js)
