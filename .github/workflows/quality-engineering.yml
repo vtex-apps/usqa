@@ -221,30 +221,37 @@ jobs:
               if (pkgsChanged != lockChanged) warn('package.json was changed, but not yarn.lock (vice-versa)')
               if (modifiedFiles?.length > 15 || additions + deletions > 420) warn('Looks like this PR is too large')
               if (!github.pr?.assignees?.length && !github.pr?.assignee) warn('No assignee has been set')
-              if (pr.body?.length < 10) fail('Provide or increase the description for this PR [at least 10 chars]')
-              keepachangelog({ changeVersion: $REQUIRE_CHANGELOG_VERSION })
+              if (pr.body?.length < 10) {
+                fail('Provide or increase the description for this PR [at least 10 chars]')
+                console.log('FAILED')
+              }
+              keepachangelog({ changeVersion: true })
               message(':tada: PR additions =  ' + additions + ', PR deletions = ' + deletions)
               message(':heart: Thanks!')
             }
           EOF_JS
           if [[ -f dangerfile.js ]]; then cat dangerfile.js >> danger.js; fi
-          ERR=0; yarn danger ci -fd danger.js &> danger.out || ERR=1
+          ERR=0; yarn danger ci -d danger.js &> danger.out
           cat danger.out
-          echo "dangerResult=$ERR" >> $GITHUB_ENV
 
       - name: "Check for substantial changes"
         if: always()
         id: changes
         run: |
           SUBSTANTIAL_CHANGES=true
+          FAILED=false
+          EXIT_CODE=0
           if [[ ${{ github.event.pull_request.head.repo.fork }} == false ]]; then
             CHECK=$(grep SUBSTANTIAL_CHANGES danger.out || echo)
             [[ -z $CHECK ]] && SUBSTANTIAL_CHANGES=false
           fi
+          CHECK=$(grep FAILED danger.out || echo)
+          [[ -z $CHECK ]] && FAILED=true
+          [[ -z $CHECK ]] && EXIT_CODE=1
           echo "Do we have substantial changes? --> $SUBSTANTIAL_CHANGES"
-          echo "What is the Danger step result? --> ${{ env.dangerResult }}"
+          echo "Does Danger failed? --> $FAILED"
           echo "substantialChanges=$SUBSTANTIAL_CHANGES" >> $GITHUB_OUTPUT       
-          exit ${{ env.dangerResult }}
+          exit $EXIT_CODE
 
   # -----------------------------------------------------------------------------------------
   # Job to run Lint (Node.js)
