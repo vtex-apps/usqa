@@ -207,10 +207,10 @@ jobs:
             const toolChanged = tool.modified || tool.created || tool.deleted || tool.edited
             if (github) {
               if (code.modified || code.created || code.deleted || code.edited) console.log('SUBSTANTIAL_CHANGES')
-              if (toolChanged) warn("Outside collaborators shouldn't change tooling [actions, package.json, etc]") 
+              if (toolChanged) warn(":warning: This PR will change tooling [GitHub Actions, package.json, etc]") 
               if (pkgsChanged != lockChanged) warn('package.json was changed, but not yarn.lock (vice-versa)')
               if (modifiedFiles?.length > 15 || additions + deletions > 420) warn('Looks like this PR is too large')
-              if (!github.pr?.assignees?.length && !github.pr?.assignee) warn('No assignee has been set')
+              if (!github.requested_reviewers?.length) warn('No reviewer has been set')
               if (pr.body?.length < 10) {
                 fail('Provide or increase the description for this PR [at least 10 chars]')
                 console.log('FAILED')
