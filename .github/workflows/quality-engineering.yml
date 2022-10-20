@@ -231,21 +231,19 @@ jobs:
             }
           EOF_JS
           if [[ -f dangerfile.js ]]; then cat dangerfile.js >> danger.js; fi
-          ERR=0; yarn danger ci -d danger.js | tee danger.out
+          yarn danger ci -d danger.js &> danger.out
 
       - name: "Check for substantial changes"
         id: changes
         run: |
           SUBSTANTIAL_CHANGES=true
           FAILED=false
-          EXIT_CODE=0
           if [[ ${{ github.event.pull_request.head.repo.fork }} == false ]]; then
             CHECK=$(grep SUBSTANTIAL_CHANGES danger.out || echo)
             [[ -z $CHECK ]] && SUBSTANTIAL_CHANGES=false
           fi
           CHECK=$(grep FAILED danger.out || echo)
           [[ -z $CHECK ]] && FAILED=true
-          [[ -z $CHECK ]] && EXIT_CODE=1
           echo "Do we have substantial changes? --> $SUBSTANTIAL_CHANGES"
           echo "Does Danger failed? --> $FAILED"
           echo "substantialChanges=$SUBSTANTIAL_CHANGES" >> $GITHUB_OUTPUT       
