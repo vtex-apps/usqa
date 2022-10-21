@@ -910,7 +910,9 @@ jobs:
         continue-on-error: true
 
       - name: "Add decorator on PR"
-        if: always() && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && env.runDecorator == 'true'
+        if: always()
+          && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target')
+          && env.runDecorator == 'true'
         uses: marocchino/sticky-pull-request-comment@97bddef64db61b9d80edc69593cc4e4c415c3362 # v2.2.1
         with:
           recreate: true
