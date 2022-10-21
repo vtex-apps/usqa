@@ -783,10 +783,12 @@ jobs:
       - name: "Trusted checkout"
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
         if: github.event.pull_request.head.repo.fork == false
+          && needs.safeCheck.outputs.substantialChanges == 'true'
 
       - name: "Untrusted checkout"
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
         if: github.event.pull_request.head.repo.fork == true
+          && needs.safeCheck.outputs.substantialChanges == 'true'
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
