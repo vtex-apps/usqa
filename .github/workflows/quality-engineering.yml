@@ -880,7 +880,7 @@ jobs:
             fi
           fi
           echo 
-          echo "unlock=$LOCK" >> $GITHUB_ENV
+          echo "runUnlock=$LOCK" >> $GITHUB_ENV
 
       - name: "Run Cy-Runner"
         if: needs.safeCheck.outputs.substantialChanges == 'true'
@@ -890,7 +890,6 @@ jobs:
         working-directory: cy-runner
 
       - name: "Analyze Cy-Runner output"
-        id: cyr
         if: always()
           && (needs.safeCheck.outputs.substantialChanges == 'true'
           || github.event_name == 'schedule'
@@ -900,20 +899,20 @@ jobs:
           LOGS='false'
           [[ -f logs/_cy-decorator.txt ]] && DECORATOR='true'
           [[ -f logs/_cy-runner.log ]] && LOGS='true'
-          echo "decorator=$DECORATOR" >> $GITHUB_ENV
-          echo "logs=$LOGS" >> $GITHUB_ENV
+          echo "runDecorator=$DECORATOR" >> $GITHUB_ENV
+          echo "runLogs=$LOGS" >> $GITHUB_ENV
         working-directory: cy-runner
         continue-on-error: true
 
       - name: "Release account level resources"
-        if: always() && steps.lock.outputs.unlock == 'true'
+        if: always() && env.runUnlock == 'true'
         run: node cy-runner/node/lock.js release
         continue-on-error: true
 
       - name: "Add decorator on PR"
         if: always()
           && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target')
-          && steps.cyr.outputs.decorator == 'true'
+          && env.runDecorator == 'true'
         uses: marocchino/sticky-pull-request-comment@97bddef64db61b9d80edc69593cc4e4c415c3362 # v2.2.1
         with:
           recreate: true
@@ -921,13 +920,13 @@ jobs:
         continue-on-error: true
 
       - name: "Sanitize logs"
-        if: always() && steps.cyr.outputs.logs == 'true'
+        if: always() && env.runLogs == 'true'
         run: sed -i -e /Bearer/d -e /Basic/d $(ls *.{json,yml,yaml,txt,log} 2> /dev/null | xargs)
         working-directory: cy-runner/logs
 
       - name: "Save artifacts"
         uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3.1.0
-        if: always() && steps.cyr.outputs.logs == 'true'
+        if: always() && env.runLogs == 'true'
         with:
           name: cy-runner-logs
           path: |
