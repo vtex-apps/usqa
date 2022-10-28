@@ -152,7 +152,7 @@ jobs:
           echo
           echo "💡 Thank you for submitting your contribution to this repository!"
           echo "To avoid bugs and security issues, your code must pass on our quality engineering workflow."
-          echo "To start the pipeline, please, ask one VTEXer to read your code and add `safe to test` label."
+          echo "To start the pipeline, please, ask one VTEXer to read your code and add 'safe to test' label."
           echo
           echo "Remember: If you do any changes after the approval, someone from VTEX needs to redo the label thing."
           exit 1
