@@ -208,8 +208,7 @@ jobs:
             const modifiedFiles = danger.git?.created_files
             .concat(danger.git?.deleted_files)
             .concat(danger.git?.modified_files)
-            const code = danger.git.fileMatch("dotnet/**", "react/**", "node/**", "**/*.js", "**/*.ts",
-            "package.json", "messages/en.json", "messages/en-us.json")
+            const code = danger.git.fileMatch("dotnet/**", "react/**", "node/**", "package.json", "yarn.lock", "messages/en.json", "messages/en-us.json")
             const pkgs = danger.git.fileMatch("package.json", "react/package.json", "node/package.json")
             const lock = danger.git.fileMatch("yarn.lock", "react/yarn.lock", "node/yarn.lock")
             const tool = danger.git.fileMatch(".github", "dangerfile.js", "package.json", "yarn.lock")
@@ -217,7 +216,6 @@ jobs:
             const lockChanged = lock.modified || lock.created || lock.deleted || lock.edited
             const toolChanged = tool.modified || tool.created || tool.deleted || tool.edited
             const toolChangedConfirmation =  (pr.body + pr.title).includes("#changingTooling")
-            const skipPackageLockSync =  (pr.body + pr.title).includes("#skipPackageChecks")
             if (gb) {
               if (code.modified || code.created || code.deleted || code.edited) console.log("SUBSTANTIAL_CHANGES")
               if (toolChanged) {
@@ -229,12 +227,7 @@ jobs:
                 }
               }
               if (pkgsChanged !== lockChanged) {
-                if (skipPackageLockSync) {
-                  warn("\`package.json\` was changed, but not \`yarn.lock\` (vice-versa) [:bulb: are you sure this is right?]")
-                } else {
-                  fail("\`package.json\` was changed, but not \`yarn.lock\` (vice-versa) [:bulb: add \`#skipPackageChecks\` on your description as ack to pass]")
-                  console.log("FAILED")
-                }
+                warn("\`package.json\` was changed, but not \`yarn.lock\` (vice-versa) [:bulb: are you sure this is right?]")
               }
               if (modifiedFiles?.length > 15 || additions + deletions > 420) {
                 warn("Looks like this PR is too large [:bulb: smaller PRs are easy to review and approve]")
