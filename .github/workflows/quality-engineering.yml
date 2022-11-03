@@ -144,8 +144,7 @@ jobs:
 #          limit-access-to-actor: true
 
       - name: "PR message to people outside VTEX"
-        if: |
-          github.event.pull_request.head.repo.fork == true && 
+        if: github.event.pull_request.head.repo.fork == true && 
           !contains(github.event.pull_request.labels.*.name, 'safe to test')
         run: |
           echo "Security check failed"
@@ -157,6 +156,13 @@ jobs:
           echo "Remember: If you do any changes after the approval, someone from VTEX needs to redo the label thing."
           exit 1
 
+      - name: "Message to Dependabot PRs"
+        if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request_target'
+        run: |
+          echo "This was triggered by a Dependabot request as labeled PR"
+          echo "You should follow the Danger.js instructions to finish this task"
+          exit 1
+          
       - name: "Remove the label 'safe to test' to avoid run again on changed code"
         if: contains(github.event.pull_request.labels.*.name, 'safe to test')
         run: |
