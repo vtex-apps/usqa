@@ -314,7 +314,6 @@ jobs:
           if [[ $FAILED -eq 1 ]]; then exit 1; fi
 
       - name: "Set up Node.js"
-        if: needs.safeCheck.outputs.substantialChanges == 'true' || github.event_name == 'push'
         uses: actions/setup-node@8c91899e586c5b171469028077307d293428b516 # v3.5.1
         with:
           cache: yarn
@@ -322,7 +321,6 @@ jobs:
         continue-on-error: true
 
       - name: "Install packages"
-        if: needs.safeCheck.outputs.substantialChanges == 'true' || github.event_name == 'push'
         run: |
           echo "::group::Install root packages"
           [[ -f 'package.json' ]] && yarn install --frozen-lockfile
@@ -338,7 +336,6 @@ jobs:
           done
 
       - name: "Run lint"
-        if: needs.safeCheck.outputs.substantialChanges == 'true' || github.event_name == 'push'
         run: |
           echo "::group::Lint Node.js"
           yarn lint
