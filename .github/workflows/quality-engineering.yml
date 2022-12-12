@@ -248,7 +248,7 @@ jobs:
           EOF_JS
           if [[ -f dangerfile.js ]]; then cat dangerfile.js >> danger.js; fi
           echo "::group::Run Danger.js"
-          yarn danger ci -d danger.js | tee danger.out
+          yarn danger ci -fd danger.js | tee danger.out
           cat danger.out 2> /dev/null || echo "danger.out not found"
           echo "::endgroup::"
 
