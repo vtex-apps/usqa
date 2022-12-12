@@ -217,13 +217,14 @@ jobs:
             const code = danger.git.fileMatch("dotnet/**", "react/**", "node/**", "package.json", "yarn.lock", "messages/en.json", "messages/en-us.json")
             const pkgs = danger.git.fileMatch("package.json", "react/package.json", "node/package.json")
             const lock = danger.git.fileMatch("yarn.lock", "react/yarn.lock", "node/yarn.lock")
-            const tool = danger.git.fileMatch(".github", "dangerfile.js", "package.json", "yarn.lock")
+            const tool = danger.git.fileMatch(".github", "dangerfile.js", "package.json", "yarn.lock", "cy-runner.yml", "cypress/**")
             const pkgsChanged = pkgs.modified || pkgs.created || pkgs.deleted || pkgs.edited
             const lockChanged = lock.modified || lock.created || lock.deleted || lock.edited
             const toolChanged = tool.modified || tool.created || tool.deleted || tool.edited
             const toolChangedConfirmation =  (pr.body + pr.title).includes("#changingTooling")
             if (gb) {
               if (code.modified || code.created || code.deleted || code.edited) console.log("SUBSTANTIAL_CHANGES")
+              if (tool.modified || tool.created || tool.deleted || tool.edited) console.log("SUBSTANTIAL_CHANGES")
               if (toolChanged) {
                 if (toolChangedConfirmation) {
                   warn(":stop_sign: This PR will change tooling [:bulb: could be GitHub Actions, \`package.json\`, etc]")
