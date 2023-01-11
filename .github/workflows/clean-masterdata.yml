@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Create script
         run: |
-          cat << EOF_JS > masterdata.js
+          cat << 'EOF_JS' > masterdata.js
           const axios = require('axios')
           const BASE_URL = 'https://productusqa.myvtex.com/api/dataentities'
           const MAX_RESOURCES = 100
